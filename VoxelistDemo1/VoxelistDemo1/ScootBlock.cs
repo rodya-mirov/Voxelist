@@ -26,7 +26,6 @@ namespace VoxelistDemo1
 
         private const float buffer = 0.25f;
         private const float size = 1.0f - 2.0f * buffer;
-        private static Vector3 cameraOffset = Vector3.One * (buffer + (size/2f));
 
         public static void LoadContent(Game game)
         {
@@ -47,14 +46,6 @@ namespace VoxelistDemo1
         public override BoundingBox BoundingBox
         {
             get { return new BoundingBox(Position.InChunkPosition + buffer * Vector3.One, Position.InChunkPosition + (buffer + size) * Vector3.One); }
-        }
-
-        public override WorldPosition CameraFollowPosition
-        {
-            get
-            {
-                return Position + cameraOffset;
-            }
         }
 
         private Vector3 intendedVelocity;

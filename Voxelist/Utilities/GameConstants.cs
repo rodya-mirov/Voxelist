@@ -23,6 +23,6 @@ namespace Voxelist.Utilities
         public static Vector3 CHUNK_SIZE { get { return chunkSize; } }
         #endregion
 
-        public const float PHYSICS_EPSILON = 0.00001f; //on a collision, move back this amount to avoid staying *slightly* inside something
+        public const float PHYSICS_COLLISION_EPSILON = 0.00001f; //on a collision, move back this amount to avoid staying *slightly* inside something
     }
 }

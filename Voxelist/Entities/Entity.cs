@@ -154,7 +154,7 @@ namespace Voxelist.Entities
             Vector3 pv = Physics_Velocity;
 
             bool collidedX = false;
-            intendedChange.X = ResolveCollisions(Position.chunkX, Position.chunkZ, BoundingBox, intendedChange.X, ref collidedX, Dimension.X);
+            intendedChange.X = ResolveCollisions(BoundingBox, intendedChange.X, ref collidedX, Dimension.X);
 
             if (collidedX)
             {
@@ -168,7 +168,7 @@ namespace Voxelist.Entities
             Position += new Vector3(intendedChange.X, 0, 0);
 
             bool collidedY = false;
-            intendedChange.Y = ResolveCollisions(Position.chunkX, Position.chunkZ, BoundingBox, intendedChange.Y, ref collidedY, Dimension.Y);
+            intendedChange.Y = ResolveCollisions(BoundingBox, intendedChange.Y, ref collidedY, Dimension.Y);
 
             if (collidedY)
             {
@@ -182,11 +182,11 @@ namespace Voxelist.Entities
             Position += new Vector3(0, intendedChange.Y, 0);
 
             bool collidedZ = false;
-            intendedChange.Z = ResolveCollisions(Position.chunkX, Position.chunkZ, BoundingBox, intendedChange.Z, ref collidedZ, Dimension.Z);
+            intendedChange.Z = ResolveCollisions(BoundingBox, intendedChange.Z, ref collidedZ, Dimension.Z);
 
             if (collidedZ)
             {
-                pv.X = 0;
+                pv.Z = 0;
                 if (originalIntendedChange.Z <= 0)
                     ZCollidedForward = true;
                 if (originalIntendedChange.Z >= 0)
@@ -208,11 +208,11 @@ namespace Voxelist.Entities
             ZCollidedForward = false;
         }
 
-        private IEnumerable<BoundingBox> PossibleCollisions(int chunkX, int chunkZ, BoundingBox currentBoundingBox)
+        private IEnumerable<BoundingBox> CollidingBoxes(BoundingBox currentBoundingBox)
         {
             if (CollidesWithMapGeometry)
             {
-                foreach (BoundingBox box in Map.IntersectingBlockBoxes(chunkX, chunkZ, currentBoundingBox))
+                foreach (BoundingBox box in Map.IntersectingBlockBoxes(Position.chunkX, Position.chunkZ, currentBoundingBox))
                     yield return box;
             }
 
@@ -221,13 +221,116 @@ namespace Voxelist.Entities
                 if (this.CollidesWithEntity(other))
                 {
                     BoundingBox box = other.BoundingBox;
+                    Vector3 translation = new Vector3(GameConstants.CHUNK_X_WIDTH * (other.Position.chunkX - this.Position.chunkX), 0, GameConstants.CHUNK_Z_LENGTH * (other.Position.chunkZ - this.Position.chunkZ));
+                    box.Min += translation;
+                    box.Max += translation;
+
                     if (box.Intersects(currentBoundingBox))
                         yield return box;
                 }
             }
         }
 
-        private const bool UseSloppyCollisionResolution = true;
+        /// <summary>
+        /// Detects map collisions.  The first three parameters describe the position and boundingbox
+        /// of the object of interest.  The last parameter describes the intended change vector.  This
+        /// processes possible collisions with the map data and changes that vector to the maximum
+        /// amount allowable without causing any collisions.
+        /// 
+        /// The output is the maximum allowable change (in line with the input and the collisions).
+        /// Also keeps track of whether a collision of each type actually occurred.
+        /// </summary>
+        /// <param name="chunkX">Chunk coordinate for perspective on the bounding box.</param>
+        /// <param name="chunkZ">Chunk coordinate for perspective on the bounding box.</param>
+        /// <param name="unmovedBox">The boundingBox for the object in its current position.</param>
+        /// <param name="intendedChange">The vector we're hoping to move along.  Only the relevant coordinate is examined.</param>
+        /// <param name="collided">Set to true if a collision occurs.  Otherwise unchanged.</param>
+        /// <param name="movementDimension">Which dimension of movement is currently being considered.</param>
+        /// <returns></returns>
+        public float ResolveCollisions(BoundingBox unmovedBox, float originalIntendedChange, ref bool collided, Dimension movementDimension)
+        {
+            float relevantChange = originalIntendedChange;
+
+            if (relevantChange == 0)
+                return originalIntendedChange;
+
+            BoundingBox stretchedBox = new BoundingBox(unmovedBox.Min, unmovedBox.Max);
+
+            if (relevantChange > 0)//if the relevant direction is POSITIVE...
+            {
+                switch (movementDimension)//then affect the relevant maximum
+                {
+                    case Dimension.X: stretchedBox.Max.X += relevantChange; break;
+                    case Dimension.Y: stretchedBox.Max.Y += relevantChange; break;
+                    case Dimension.Z: stretchedBox.Max.Z += relevantChange; break;
+                    default: throw new NotImplementedException();
+                }
+            }
+            else //if the relevant direction is NEGATIVE...
+            {
+                switch (movementDimension)//then affect the relevant minimum
+                {
+                    case Dimension.X: stretchedBox.Min.X += relevantChange; break;
+                    case Dimension.Y: stretchedBox.Min.Y += relevantChange; break;
+                    case Dimension.Z: stretchedBox.Min.Z += relevantChange; break;
+                    default: throw new NotImplementedException();
+                }
+            }
+
+            foreach (BoundingBox blockBounds in CollidingBoxes(stretchedBox))
+            {
+                collided = true;
+
+                if (relevantChange > 0)
+                {
+                    switch (movementDimension)
+                    {
+                        case Dimension.X:
+                            stretchedBox.Max.X = blockBounds.Min.X;
+                            relevantChange = stretchedBox.Max.X - unmovedBox.Max.X - GameConstants.PHYSICS_COLLISION_EPSILON;
+                            break;
+
+                        case Dimension.Y:
+                            stretchedBox.Max.Y = blockBounds.Min.Y;
+                            relevantChange = stretchedBox.Max.Y - unmovedBox.Max.Y - GameConstants.PHYSICS_COLLISION_EPSILON;
+                            break;
+
+                        case Dimension.Z:
+                            stretchedBox.Max.Z = blockBounds.Min.Z;
+                            relevantChange = stretchedBox.Max.Z - unmovedBox.Max.Z - GameConstants.PHYSICS_COLLISION_EPSILON;
+                            break;
+
+                        default: throw new NotImplementedException();
+                    }
+                }
+                else
+                {
+                    switch (movementDimension)
+                    {
+                        case Dimension.X:
+                            stretchedBox.Min.X = blockBounds.Max.X;
+                            relevantChange = stretchedBox.Min.X - unmovedBox.Min.X + GameConstants.PHYSICS_COLLISION_EPSILON;
+                            break;
+
+                        case Dimension.Y:
+                            stretchedBox.Min.Y = blockBounds.Max.Y;
+                            relevantChange = stretchedBox.Min.Y - unmovedBox.Min.Y + GameConstants.PHYSICS_COLLISION_EPSILON;
+                            break;
+
+                        case Dimension.Z:
+                            stretchedBox.Min.Z = blockBounds.Max.Z;
+                            relevantChange = stretchedBox.Min.Z - unmovedBox.Min.Z + GameConstants.PHYSICS_COLLISION_EPSILON;
+                            break;
+
+                        default: throw new NotImplementedException();
+                    }
+                }
+            }
+
+            return relevantChange;
+        }
+
+        private const bool UseSloppyCollisionResolution = false;
 
         /// <summary>
         /// Detects map collisions.  The first three parameters describe the position and boundingbox
@@ -245,7 +348,7 @@ namespace Voxelist.Entities
         /// <param name="collided">Set to true if a collision occurs.  Otherwise unchanged.</param>
         /// <param name="movementDimension">Which dimension of movement is currently being considered.</param>
         /// <returns></returns>
-        public float ResolveCollisions(int chunkX, int chunkZ, BoundingBox startingBox, float originalIntendedChange, ref bool collided, Dimension movementDimension)
+        public float ResolveCollisions2(int chunkX, int chunkZ, BoundingBox startingBox, float originalIntendedChange, ref bool collided, Dimension movementDimension)
         {
             float relevantChange = originalIntendedChange;
 
@@ -280,7 +383,7 @@ namespace Voxelist.Entities
                 default: throw new NotImplementedException();
             }
 
-            foreach (BoundingBox blockBounds in PossibleCollisions(chunkX, chunkZ, stretchedBox))
+            foreach (BoundingBox blockBounds in CollidingBoxes(stretchedBox))
             {
                 collided = true;
 
@@ -295,7 +398,7 @@ namespace Voxelist.Entities
                                 else
                                     throw new Exception("Coder error... physics engine failure.");
 
-                                relevantChange = stretchedBox.Max.X - startingBox.Max.X - GameConstants.PHYSICS_EPSILON;
+                                relevantChange = stretchedBox.Max.X - startingBox.Max.X - GameConstants.PHYSICS_COLLISION_EPSILON;
                                 break;
 
                             case Dimension.Y:
@@ -304,7 +407,7 @@ namespace Voxelist.Entities
                                 else
                                     throw new Exception("Coder error... physics engine failure.");
 
-                                relevantChange = stretchedBox.Max.Y - startingBox.Max.Y - GameConstants.PHYSICS_EPSILON;
+                                relevantChange = stretchedBox.Max.Y - startingBox.Max.Y - GameConstants.PHYSICS_COLLISION_EPSILON;
                                 break;
 
                             case Dimension.Z:
@@ -313,7 +416,7 @@ namespace Voxelist.Entities
                                 else
                                     throw new Exception("Coder error... physics engine failure.");
 
-                                relevantChange = stretchedBox.Max.Z - startingBox.Max.Z - GameConstants.PHYSICS_EPSILON;
+                                relevantChange = stretchedBox.Max.Z - startingBox.Max.Z - GameConstants.PHYSICS_COLLISION_EPSILON;
                                 break;
 
                             default: throw new NotImplementedException();
@@ -329,7 +432,7 @@ namespace Voxelist.Entities
                                 else
                                     throw new Exception("Coder error... physics engine failure.");
 
-                                relevantChange = stretchedBox.Min.X - startingBox.Min.X + GameConstants.PHYSICS_EPSILON;
+                                relevantChange = stretchedBox.Min.X - startingBox.Min.X + GameConstants.PHYSICS_COLLISION_EPSILON;
                                 break;
 
                             case Dimension.Y:
@@ -338,7 +441,7 @@ namespace Voxelist.Entities
                                 else
                                     throw new Exception("Coder error... physics engine failure.");
 
-                                relevantChange = stretchedBox.Min.Y - startingBox.Min.Y + GameConstants.PHYSICS_EPSILON;
+                                relevantChange = stretchedBox.Min.Y - startingBox.Min.Y + GameConstants.PHYSICS_COLLISION_EPSILON;
                                 break;
 
                             case Dimension.Z:
@@ -347,7 +450,7 @@ namespace Voxelist.Entities
                                 else
                                     throw new Exception("Coder error... physics engine failure.");
 
-                                relevantChange = stretchedBox.Min.Z - startingBox.Min.Z + GameConstants.PHYSICS_EPSILON;
+                                relevantChange = stretchedBox.Min.Z - startingBox.Min.Z + GameConstants.PHYSICS_COLLISION_EPSILON;
                                 break;
 
                             default: throw new NotImplementedException();

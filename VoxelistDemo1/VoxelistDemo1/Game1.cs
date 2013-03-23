@@ -19,7 +19,10 @@ namespace VoxelistDemo1
     /// </summary>
     public class Game1 : VoxelistGame
     {
-        WorldManagerExtension drawable;
+        private WorldManagerExtension drawable;
+
+        private SpriteBatch batch;
+        private SpriteFont Font;
 
         public Game1()
         {
@@ -55,6 +58,9 @@ namespace VoxelistDemo1
             base.LoadContent();
 
             ScootBlock.LoadContent(this);
+
+            batch = new SpriteBatch(GraphicsDevice);
+            Font = Content.Load<SpriteFont>("Fonts/Segoe");
 
             LoadGraphicsSettings();
         }
@@ -114,6 +120,29 @@ namespace VoxelistDemo1
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             base.Draw(gameTime);
+
+            DrawDebugString();
+        }
+
+        public void DrawDebugString()
+        {
+            String toDraw = Camera.HorizontalForward.ToString();
+
+            int x = 40;
+            int y = 60;
+
+            BlendState blend = GraphicsDevice.BlendState;
+            DepthStencilState stencil = GraphicsDevice.DepthStencilState;
+            SamplerState sampler = GraphicsDevice.SamplerStates[0];
+
+            batch.Begin();
+            batch.DrawString(Font, toDraw, new Vector2(x, y+1), Color.Black);
+            batch.DrawString(Font, toDraw, new Vector2(x, y), Color.White);
+            batch.End();
+
+            GraphicsDevice.BlendState = blend;
+            GraphicsDevice.DepthStencilState = stencil;
+            GraphicsDevice.SamplerStates[0] = sampler;
         }
     }
 }
