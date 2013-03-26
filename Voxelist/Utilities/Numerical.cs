@@ -46,7 +46,7 @@ namespace Voxelist.Utilities
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public static int intDivide(int x, int y)
+        public static int IntDivide(int x, int y)
         {
             int r = (int)(x / y);
 
@@ -61,7 +61,7 @@ namespace Voxelist.Utilities
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public static int intDivide(float x, float y)
+        public static int FloatDivide(float x, float y)
         {
             int r = (int)(x / y);
 

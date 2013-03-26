@@ -182,9 +182,9 @@ namespace Voxelist.GeometryPrimitives
         /// <returns></returns>
         public static GeometryPrimitive Make3DRectangle(Vector3 minimalCorner, Vector3 size,
             Vector2 textureMinimalCorner, Vector2 textureSize,
-            bool includeFrontFace = true, bool includeBackFace = true,
-            bool includeTopFace = true, bool includeBottomFace = true,
-            bool includeLeftFace = true, bool includeRightFace = true)
+            bool includeFrontFace, bool includeBackFace,
+            bool includeTopFace, bool includeBottomFace,
+            bool includeLeftFace, bool includeRightFace)
         {
             int faceCount = 0;
 

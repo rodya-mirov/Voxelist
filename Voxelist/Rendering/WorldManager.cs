@@ -34,8 +34,8 @@ namespace Voxelist.Rendering
         {
             base.LoadContent();
 
-            Map.LoadContent(Game);
             BlockHandler.LoadContent(Game);
+            Map.LoadContent(Game);
         }
 
         public override void Update(GameTime gameTime)

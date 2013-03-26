@@ -88,7 +88,9 @@ namespace Voxelist.Mapping
                         blockBounds.Max += translation;
 
                         if (blockBounds.Intersects(box))
+                        {
                             yield return blockBounds;
+                        }
                     }
                 }
             }

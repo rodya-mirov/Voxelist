@@ -8,7 +8,7 @@ using Voxelist.Entities;
 using Voxelist.Mapping;
 using Voxelist.Rendering;
 
-namespace VoxelistDemo1
+namespace VoxelistDemo2
 {
     public class PlayerAvatar : Entity
     {
@@ -40,6 +40,19 @@ namespace VoxelistDemo1
         protected override Vector3 Intentional_Velocity
         {
             get { return intentionalVelocity; }
+        }
+
+        protected override float UpStepSize
+        {
+            get { return 0.52f; }
+        }
+
+        public override bool CollidesWithMapGeometry
+        {
+            get
+            {
+                return true;
+            }
         }
 
         public override void Update(GameTime gametime)
@@ -116,11 +129,6 @@ namespace VoxelistDemo1
         public override void Draw(GameTime gametime)
         {
             //invisible
-        }
-
-        protected override float UpStepSize
-        {
-            get { return 1.2f; }
         }
     }
 }

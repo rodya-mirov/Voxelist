@@ -112,11 +112,11 @@ namespace Voxelist
 
                 Mouse.SetPosition(desiredMouseX, desiredMouseY);
 
-                LockedMouseWasMoved(xChange, yChange);
+                MouseMoved(xChange, yChange);
             }
         }
 
-        protected virtual void LockedMouseWasMoved(int xChange, int yChange)
+        protected virtual void MouseMoved(int xChange, int yChange)
         {
             //do nothing
         }

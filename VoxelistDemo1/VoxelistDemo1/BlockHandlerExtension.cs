@@ -95,27 +95,6 @@ namespace VoxelistDemo1
         }
         #endregion Drawing Data
 
-        /// <summary>
-        /// Averages out to a solid block iff there are at least 4 solid
-        /// blocks in the range!
-        /// </summary>
-        /// <param name="blocks"></param>
-        /// <returns></returns>
-        public override Block Average(Block[] blocks)
-        {
-            int countSolid = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                if (IsVisible(blocks[i]))
-                    countSolid++;
-            }
-
-            if (countSolid >= 4)
-                return new Block(1);
-            else
-                return new Block(0);
-        }
-
         public override bool IsPassable(Block block)
         {
             switch (block.blockID)

@@ -16,12 +16,12 @@ namespace VoxelistDemo1
         {
         }
 
-        private PlayerAvatar avatar;
+        public PlayerAvatar Avatar { get; private set; }
         private ScootBlock[] scooters;
 
         public override IEnumerable<Entity> Entities()
         {
-            yield return avatar;
+            yield return Avatar;
 
             for (int i = 0; i < scooters.Length; i++)
                 yield return scooters[i];
@@ -31,10 +31,10 @@ namespace VoxelistDemo1
         {
             base.LoadContent();
 
-            avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 3, 0), this);
-            Camera.StartFollowing(avatar);
+            Avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 3, 0), this);
+            Camera.StartFollowing(Avatar);
 
-            scooters = new ScootBlock[11];
+            scooters = new ScootBlock[15];
 
             Skybox = new Skybox();
             Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxLayout");

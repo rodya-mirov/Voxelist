@@ -29,7 +29,10 @@ namespace VoxelistDemo1
 
         public static void LoadContent(Game game)
         {
-            entityPrimitive = GeometryPrimitive.Make3DRectangle(Vector3.One * buffer, Vector3.One * size, Vector2.Zero, new Vector2(1.0f, 1.0f));
+            entityPrimitive = GeometryPrimitive.Make3DRectangle(
+                Vector3.One * buffer, Vector3.One * size,
+                Vector2.Zero, new Vector2(1.0f, 1.0f),
+                true, true, true, true, true, true);
             numVertices = 24;
             numTriangles = 12;
 
@@ -58,6 +61,11 @@ namespace VoxelistDemo1
                 else
                     return Vector3.Zero;
             }
+        }
+
+        protected override float UpStepSize
+        {
+            get { return 0.3f; }
         }
 
         public override void Update(GameTime gametime)

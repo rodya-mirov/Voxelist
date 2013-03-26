@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoxelistDemo1", "..\Voxelis
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoxelistDemo1Content", "..\VoxelistDemo1\VoxelistDemo1Content\VoxelistDemo1Content.contentproj", "{7D0829BB-6E9D-4459-AD57-98FEC7E58644}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoxelistDemo2", "..\VoxelistDemo2\VoxelistDemo2\VoxelistDemo2.csproj", "{45AB0243-A27D-4FA4-8A2D-10B51B5C1E55}"
+EndProject
+Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "VoxelistDemo2Content", "..\VoxelistDemo2\VoxelistDemo2Content\VoxelistDemo2Content.contentproj", "{CF89AFD4-57AB-4BA0-B02B-0BC5DAC6AEA6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -23,6 +27,12 @@ Global
 		{ECA0E4ED-06BA-4F14-B265-BA403368ECD7}.Release|x86.Build.0 = Release|x86
 		{7D0829BB-6E9D-4459-AD57-98FEC7E58644}.Debug|x86.ActiveCfg = Debug|x86
 		{7D0829BB-6E9D-4459-AD57-98FEC7E58644}.Release|x86.ActiveCfg = Release|x86
+		{45AB0243-A27D-4FA4-8A2D-10B51B5C1E55}.Debug|x86.ActiveCfg = Debug|x86
+		{45AB0243-A27D-4FA4-8A2D-10B51B5C1E55}.Debug|x86.Build.0 = Debug|x86
+		{45AB0243-A27D-4FA4-8A2D-10B51B5C1E55}.Release|x86.ActiveCfg = Release|x86
+		{45AB0243-A27D-4FA4-8A2D-10B51B5C1E55}.Release|x86.Build.0 = Release|x86
+		{CF89AFD4-57AB-4BA0-B02B-0BC5DAC6AEA6}.Debug|x86.ActiveCfg = Debug|x86
+		{CF89AFD4-57AB-4BA0-B02B-0BC5DAC6AEA6}.Release|x86.ActiveCfg = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

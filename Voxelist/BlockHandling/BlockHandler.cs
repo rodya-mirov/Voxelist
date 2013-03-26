@@ -174,15 +174,6 @@ namespace Voxelist.BlockHandling
         #endregion
 
         /// <summary>
-        /// This finds the average block, given an array of
-        /// 8 blocks.  There are sorted lexicographically
-        /// by (x,y,z) index, and represent a 2x2x2 block.
-        /// </summary>
-        /// <param name="blocks"></param>
-        /// <returns></returns>
-        public abstract Block Average(Block[] blocks);
-
-        /// <summary>
         /// The model for drawing this block.  Not required to
         /// be implemented when IsVisible is false.
         /// 
@@ -193,9 +184,9 @@ namespace Voxelist.BlockHandling
         /// <param name="block"></param>
         /// <returns></returns>
         public abstract GeometryPrimitive DrawingPrimitive(Block block,
-            bool includeFrontFace = true, bool includeBackFace = true,
-            bool includeTopFace = true, bool includeBottomFace = true,
-            bool includeLeftFace = true, bool includeRightFace = true);
+            bool includeFrontFace, bool includeBackFace,
+            bool includeTopFace, bool includeBottomFace,
+            bool includeLeftFace, bool includeRightFace);
 
         protected Game Game;
 
