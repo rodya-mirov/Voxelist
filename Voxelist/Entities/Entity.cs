@@ -19,6 +19,9 @@ namespace Voxelist.Entities
         {
             this.Position = position;
             this.WorldManager = manager;
+
+            this.GroundFrictionScale_Experienced = 100f;
+            this.GroundFrictionVelocity_Experienced = Vector3.Zero;
         }
 
         /// <summary>
@@ -83,24 +86,13 @@ namespace Voxelist.Entities
         /// </summary>
         public virtual bool CollidesWithMapGeometry { get { return true; } }
 
-        /// <summary>
-        /// Whether or not this Entity is stopped by the specified other entity.
-        /// Default is to return false.  Note that strange behavior will occur if
-        /// this is not a symmetric, antireflexive relation.
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public virtual bool CollidesWithEntity(Entity other)
-        {
-            return false;
-        }
-
         protected Vector3 Acceleration { get; set; }
 
-        protected Vector3 Physics_Velocity { get; set; }
-        protected virtual Vector3 Intentional_Velocity { get; set; }
+        protected Vector3 Velocity { get; set; }
 
-        protected Vector3 Total_Velocity { get { return Physics_Velocity + Intentional_Velocity; } }
+        protected abstract Vector3 GroundIntendedVelocity { get; }
+
+        protected bool OnGround { get { return YCollidedDown; } }
 
         /// <summary>
         /// In meters/sec^2.
@@ -112,6 +104,23 @@ namespace Voxelist.Entities
         protected virtual Vector3 GravityAcceleration
         {
             get { return new Vector3(0, -9.8f, 0); }
+        }
+
+        protected float GroundFrictionScale_Experienced
+        {
+            get;
+            private set;
+        }
+
+        protected Vector3 GroundFrictionVelocity_Experienced
+        {
+            get;
+            private set;
+        }
+
+        protected float Airborne_Drag
+        {
+            get { return .2f; }
         }
 
         protected void physicsUpdate(GameTime gametime)
@@ -126,16 +135,28 @@ namespace Voxelist.Entities
             Acceleration = Vector3.Zero;
 
             Acceleration += GravityAcceleration;
+
+            if (OnGround)
+            {
+                Vector3 frictionContribution = GroundIntendedVelocity;
+                frictionContribution += GroundFrictionVelocity_Experienced - Velocity;
+
+                Acceleration += GroundFrictionScale_Experienced * frictionContribution;
+            }
+            else
+            {
+                Acceleration += Airborne_Drag * (-Velocity);
+            }
         }
 
         private void physicsUpdate_Velocity(GameTime gametime)
         {
-            Physics_Velocity += Acceleration * (float)(gametime.ElapsedGameTime.TotalSeconds);
+            Velocity += Acceleration * (float)(gametime.ElapsedGameTime.TotalSeconds);
         }
 
         private void physicsUpdate_Position(GameTime gametime)
         {
-            Vector3 intendedChange = Total_Velocity * (float)(gametime.ElapsedGameTime.TotalSeconds);
+            Vector3 intendedChange = Velocity * (float)(gametime.ElapsedGameTime.TotalSeconds);
 
             MoveAndResolveCollisions(intendedChange);
         }
@@ -163,18 +184,23 @@ namespace Voxelist.Entities
             ResetCollisionTrackers();
 
             Vector3 originalIntendedChange = intendedChange;
-            Vector3 pv = Physics_Velocity;
+            Vector3 pv = Velocity;
 
             float upstep = UpStepSize;
             bool upStepHitCeiling = false;
 
+            float relevantFriction;
+            Vector3 frictionVelocity;
+
             //first step up
-            upstep = ResolveCollisions(BoundingBox, upstep, ref upStepHitCeiling, Dimension.Y);
+            upstep = ResolveCollisions(BoundingBox, upstep, ref upStepHitCeiling, Dimension.Y,
+                out relevantFriction, out frictionVelocity);
             Position += new Vector3(0, upstep, 0);
 
             //now resolve lateral movement (x)
             bool collidedX = false;
-            intendedChange.X = ResolveCollisions(BoundingBox, intendedChange.X, ref collidedX, Dimension.X);
+            intendedChange.X = ResolveCollisions(BoundingBox, intendedChange.X, ref collidedX, Dimension.X,
+                out relevantFriction, out frictionVelocity);
 
             if (collidedX)
             {
@@ -189,7 +215,8 @@ namespace Voxelist.Entities
 
             //...and lateral movement (z)
             bool collidedZ = false;
-            intendedChange.Z = ResolveCollisions(BoundingBox, intendedChange.Z, ref collidedZ, Dimension.Z);
+            intendedChange.Z = ResolveCollisions(BoundingBox, intendedChange.Z, ref collidedZ, Dimension.Z,
+                out relevantFriction, out frictionVelocity);
 
             if (collidedZ)
             {
@@ -206,12 +233,14 @@ namespace Voxelist.Entities
             bool downStepHitFloor = false;
 
             //now step down..
-            downstep = ResolveCollisions(BoundingBox, downstep, ref downStepHitFloor, Dimension.Y);
+            downstep = ResolveCollisions(BoundingBox, downstep, ref downStepHitFloor, Dimension.Y,
+                out relevantFriction, out frictionVelocity);
             Position += new Vector3(0, downstep, 0);
 
             //and finally do any y-changes
             bool collidedY = false;
-            intendedChange.Y = ResolveCollisions(BoundingBox, intendedChange.Y, ref collidedY, Dimension.Y);
+            intendedChange.Y = ResolveCollisions(BoundingBox, intendedChange.Y, ref collidedY, Dimension.Y,
+                out relevantFriction, out frictionVelocity);
 
             if (collidedY)
             {
@@ -220,11 +249,14 @@ namespace Voxelist.Entities
                     YCollidedDown = true;
                 if (originalIntendedChange.Y >= 0)
                     YCollidedUp = true;
+
+                GroundFrictionScale_Experienced = relevantFriction;
+                GroundFrictionVelocity_Experienced = frictionVelocity;
             }
 
             Position += new Vector3(0, intendedChange.Y, 0);
 
-            Physics_Velocity = pv;
+            Velocity = pv;
         }
 
         private void ResetCollisionTrackers()
@@ -237,26 +269,12 @@ namespace Voxelist.Entities
             ZCollidedForward = false;
         }
 
-        private IEnumerable<BoundingBox> CollidingBoxes(BoundingBox currentBoundingBox)
+        private IEnumerable<Collider> Collisions(BoundingBox currentBoundingBox)
         {
             if (CollidesWithMapGeometry)
             {
-                foreach (BoundingBox box in Map.IntersectingBlockBoxes(Position.chunkX, Position.chunkZ, currentBoundingBox))
+                foreach (Collider box in Map.IntersectingBlocks(Position.chunkX, Position.chunkZ, currentBoundingBox))
                     yield return box;
-            }
-
-            foreach (Entity other in WorldManager.Entities())
-            {
-                if (this.CollidesWithEntity(other))
-                {
-                    BoundingBox box = other.BoundingBox;
-                    Vector3 translation = new Vector3(GameConstants.CHUNK_X_WIDTH * (other.Position.chunkX - this.Position.chunkX), 0, GameConstants.CHUNK_Z_LENGTH * (other.Position.chunkZ - this.Position.chunkZ));
-                    box.Min += translation;
-                    box.Max += translation;
-
-                    if (box.Intersects(currentBoundingBox))
-                        yield return box;
-                }
             }
         }
 
@@ -272,13 +290,17 @@ namespace Voxelist.Entities
         /// <param name="chunkX">Chunk coordinate for perspective on the bounding box.</param>
         /// <param name="chunkZ">Chunk coordinate for perspective on the bounding box.</param>
         /// <param name="unmovedBox">The boundingBox for the object in its current position.</param>
-        /// <param name="intendedChange">The vector we're hoping to move along.  Only the relevant coordinate is examined.</param>
+        /// <param name="originalIntendedChange">The amount we're hoping to move.</param>
         /// <param name="collided">Set to true if a collision occurs.  Otherwise unchanged.</param>
         /// <param name="movementDimension">Which dimension of movement is currently being considered.</param>
+        /// <param name="effectiveFriction">The amount of friction the object in question will be experiencing.</param>
         /// <returns></returns>
-        private float ResolveCollisions(BoundingBox unmovedBox, float originalIntendedChange, ref bool collided, Dimension movementDimension)
+        private float ResolveCollisions(BoundingBox unmovedBox, float originalIntendedChange, ref bool collided,
+            Dimension movementDimension, out float effectiveFriction, out Vector3 frictionVelocity)
         {
             float relevantChange = originalIntendedChange;
+            effectiveFriction = 0;
+            frictionVelocity = Vector3.Zero;
 
             if (relevantChange == 0)
                 return originalIntendedChange;
@@ -309,12 +331,17 @@ namespace Voxelist.Entities
 
             BoundingBox stretchedBox = new BoundingBox(boxmin, boxmax);
 
-            foreach (BoundingBox blockBounds in CollidingBoxes(stretchedBox))
+            foreach (Collider collider in Collisions(stretchedBox))
             {
+                BoundingBox blockBounds = collider.BoundingBox;
+
                 if (!blockBounds.Intersects(stretchedBox))
                     continue;
 
                 collided = true;
+
+                effectiveFriction = collider.Friction;
+                frictionVelocity = collider.FrictionVelocity;
 
                 if (relevantChange > 0)
                 {
@@ -365,139 +392,6 @@ namespace Voxelist.Entities
             return relevantChange;
         }
 
-        private const bool UseSloppyCollisionResolution = false;
-
-        /// <summary>
-        /// Detects map collisions.  The first three parameters describe the position and boundingbox
-        /// of the object of interest.  The last parameter describes the intended change vector.  This
-        /// processes possible collisions with the map data and changes that vector to the maximum
-        /// amount allowable without causing any collisions.
-        /// 
-        /// The output is the maximum allowable change (in line with the input and the collisions).
-        /// Also keeps track of whether a collision of each type actually occurred.
-        /// </summary>
-        /// <param name="chunkX">Chunk coordinate for perspective on the bounding box.</param>
-        /// <param name="chunkZ">Chunk coordinate for perspective on the bounding box.</param>
-        /// <param name="startingBox">The boundingBox for the object in its current position.</param>
-        /// <param name="intendedChange">The vector we're hoping to move along.  Only the relevant coordinate is examined.</param>
-        /// <param name="collided">Set to true if a collision occurs.  Otherwise unchanged.</param>
-        /// <param name="movementDimension">Which dimension of movement is currently being considered.</param>
-        /// <returns></returns>
-        public float ResolveCollisions2(int chunkX, int chunkZ, BoundingBox startingBox, float originalIntendedChange, ref bool collided, Dimension movementDimension)
-        {
-            float relevantChange = originalIntendedChange;
-
-            if (relevantChange == 0)
-                return originalIntendedChange;
-
-            Sign sign = (relevantChange > 0 ? Sign.Positive : Sign.Negative);
-
-            BoundingBox stretchedBox = new BoundingBox(startingBox.Min, startingBox.Max);
-            switch (sign)
-            {
-                case Sign.Positive: //if the relevant direction is POSITIVE...
-                    switch (movementDimension)//then affect the relevant maximum
-                    {
-                        case Dimension.X: stretchedBox.Max.X += relevantChange; break;
-                        case Dimension.Y: stretchedBox.Max.Y += relevantChange; break;
-                        case Dimension.Z: stretchedBox.Max.Z += relevantChange; break;
-                        default: throw new NotImplementedException();
-                    }
-                    break;
-
-                case Sign.Negative: //if the relevant direction is NEGATIVE...
-                    switch (movementDimension)//then affect the relevant minimum
-                    {
-                        case Dimension.X: stretchedBox.Min.X += relevantChange; break;
-                        case Dimension.Y: stretchedBox.Min.Y += relevantChange; break;
-                        case Dimension.Z: stretchedBox.Min.Z += relevantChange; break;
-                        default: throw new NotImplementedException();
-                    }
-                    break;
-
-                default: throw new NotImplementedException();
-            }
-
-            foreach (BoundingBox blockBounds in CollidingBoxes(stretchedBox))
-            {
-                collided = true;
-
-                switch (sign)
-                {
-                    case Sign.Positive:
-                        switch (movementDimension)
-                        {
-                            case Dimension.X:
-                                if (stretchedBox.Max.X >= blockBounds.Min.X || UseSloppyCollisionResolution)
-                                    stretchedBox.Max.X = blockBounds.Min.X;
-                                else
-                                    throw new Exception("Coder error... physics engine failure.");
-
-                                relevantChange = stretchedBox.Max.X - startingBox.Max.X - GameConstants.PHYSICS_COLLISION_EPSILON;
-                                break;
-
-                            case Dimension.Y:
-                                if (stretchedBox.Max.Y >= blockBounds.Min.Y || UseSloppyCollisionResolution)
-                                    stretchedBox.Max.Y = blockBounds.Min.Y;
-                                else
-                                    throw new Exception("Coder error... physics engine failure.");
-
-                                relevantChange = stretchedBox.Max.Y - startingBox.Max.Y - GameConstants.PHYSICS_COLLISION_EPSILON;
-                                break;
-
-                            case Dimension.Z:
-                                if (stretchedBox.Max.Z >= blockBounds.Min.Z || UseSloppyCollisionResolution)
-                                    stretchedBox.Max.Z = blockBounds.Min.Z;
-                                else
-                                    throw new Exception("Coder error... physics engine failure.");
-
-                                relevantChange = stretchedBox.Max.Z - startingBox.Max.Z - GameConstants.PHYSICS_COLLISION_EPSILON;
-                                break;
-
-                            default: throw new NotImplementedException();
-                        }
-                        break;
-
-                    case Sign.Negative:
-                        switch (movementDimension)
-                        {
-                            case Dimension.X:
-                                if (stretchedBox.Min.X <= blockBounds.Max.X || UseSloppyCollisionResolution)
-                                    stretchedBox.Min.X = blockBounds.Max.X;
-                                else
-                                    throw new Exception("Coder error... physics engine failure.");
-
-                                relevantChange = stretchedBox.Min.X - startingBox.Min.X + GameConstants.PHYSICS_COLLISION_EPSILON;
-                                break;
-
-                            case Dimension.Y:
-                                if (stretchedBox.Min.Y <= blockBounds.Max.Y || UseSloppyCollisionResolution)
-                                    stretchedBox.Min.Y = blockBounds.Max.Y;
-                                else
-                                    throw new Exception("Coder error... physics engine failure.");
-
-                                relevantChange = stretchedBox.Min.Y - startingBox.Min.Y + GameConstants.PHYSICS_COLLISION_EPSILON;
-                                break;
-
-                            case Dimension.Z:
-                                if (stretchedBox.Min.Z <= blockBounds.Max.Z || UseSloppyCollisionResolution)
-                                    stretchedBox.Min.Z = blockBounds.Max.Z;
-                                else
-                                    throw new Exception("Coder error... physics engine failure.");
-
-                                relevantChange = stretchedBox.Min.Z - startingBox.Min.Z + GameConstants.PHYSICS_COLLISION_EPSILON;
-                                break;
-
-                            default: throw new NotImplementedException();
-                        }
-                        break;
-
-                    default: throw new NotImplementedException();
-                }
-            }
-
-            return relevantChange;
-        }
         #endregion
 
         public abstract void Draw(GameTime gametime);

@@ -50,6 +50,7 @@ namespace Voxelist.Mapping
             {
                 int chunkXtoFind, chunkZtoFind;
                 bool foundGoal = false;
+                Chunk copyOver = null;
 
                 //first, find your next favorite target
                 lock (validBitsLock)
@@ -67,6 +68,8 @@ namespace Voxelist.Mapping
                     {
                         chunkXtoFind = centerX;
                         chunkZtoFind = centerZ;
+                        copyOver = cachedChunks[centerXIndex, centerZIndex];
+
                         foundGoal = true;
                     }
                     else
@@ -95,11 +98,13 @@ namespace Voxelist.Mapping
                                     chunkXtoFind = leftX;
                                     chunkZtoFind = z;
                                     foundGoal = true;
+                                    copyOver = cachedChunks[leftActualIndex, actualZIndex];
                                 }
                                 else if (!cacheIsValid[rightActualIndex, actualZIndex])
                                 {
                                     chunkXtoFind = rightX;
                                     chunkZtoFind = z;
+                                    copyOver = cachedChunks[rightActualIndex, actualZIndex];
                                     foundGoal = true;
                                 }
                             }
@@ -113,12 +118,14 @@ namespace Voxelist.Mapping
                                     chunkXtoFind = x;
                                     chunkZtoFind = topZ;
                                     foundGoal = true;
+                                    copyOver = cachedChunks[actualXIndex, topActualIndex];
                                 }
                                 else if (!cacheIsValid[actualXIndex, bottomActualIndex])
                                 {
                                     chunkXtoFind = x;
                                     chunkZtoFind = bottomZ;
                                     foundGoal = true;
+                                    copyOver = cachedChunks[actualXIndex, bottomActualIndex];
                                 }
                             }
 
@@ -135,7 +142,10 @@ namespace Voxelist.Mapping
                 else
                 {
                     //otherwise, actually make the chunk (this could take a while)
-                    Chunk chunkToSave = map.MakeChunk(chunkXtoFind, chunkZtoFind);
+                    if (copyOver == null)
+                        copyOver = new Chunk(map.MakeChunkBlocks(chunkXtoFind, chunkZtoFind), map.BlockHandler);
+                    else
+                        copyOver.OverwriteWith(map.MakeChunkBlocks(chunkXtoFind, chunkZtoFind));
 
                     //now stick it back in
                     lock (validBitsLock)
@@ -148,7 +158,7 @@ namespace Voxelist.Mapping
                         int zIndex = Numerical.IntMod(chunkZtoFind - ChunkZMin + zStartIndex, Cache_Size);
 
                         cacheIsValid[xIndex, zIndex] = true;
-                        cachedChunks[xIndex, zIndex] = chunkToSave;
+                        cachedChunks[xIndex, zIndex] = copyOver;
                     }
                 }
 
@@ -212,7 +222,7 @@ namespace Voxelist.Mapping
                         int xIndex = Numerical.IntMod(x - ChunkXMin + xStartIndex, Cache_Size);
                         int zIndex = Numerical.IntMod(z - ChunkZMin + zStartIndex, Cache_Size);
 
-                        cachedChunks[xIndex, zIndex] = map.MakeChunk(x, z);
+                        cachedChunks[xIndex, zIndex] = new Chunk(map.MakeChunkBlocks(x, z), map.BlockHandler);
                         cacheIsValid[xIndex, zIndex] = true;
                     }
                 }
@@ -368,13 +378,11 @@ namespace Voxelist.Mapping
         /// drop the request (if forceSave is false) or move the cache
         /// around in order to force it to be contained.
         /// </summary>
-        /// <param name="urgentChunk"></param>
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
-        public void AddChunk(Chunk urgentChunk, int chunkX, int chunkZ, bool forceSave)
+        public void AddChunk(int chunkX, int chunkZ)
         {
-            if (forceSave)
-                Request(chunkX, chunkZ);
+            Request(chunkX, chunkZ);
 
             lock (validBitsLock)
             {
@@ -385,7 +393,11 @@ namespace Voxelist.Mapping
                 int zIndex = Numerical.IntMod(chunkZ - ChunkZMin + zStartIndex, Cache_Size);
 
                 cacheIsValid[xIndex, zIndex] = true;
-                cachedChunks[xIndex, zIndex] = urgentChunk;
+
+                if (cachedChunks[xIndex, zIndex] == null)
+                    cachedChunks[xIndex, zIndex] = new Chunk(map.MakeChunkBlocks(chunkX, chunkZ), map.BlockHandler);
+                else
+                    cachedChunks[xIndex, zIndex].OverwriteWith(map.MakeChunkBlocks(chunkX, chunkZ));
             }
         }
     }

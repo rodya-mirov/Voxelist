@@ -25,7 +25,7 @@ namespace VoxelistDemo2
             Camera.StartFollowing(avatar);
 
             Skybox = new Skybox();
-            Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxLayout");
+            Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxGraphics");
         }
 
         public override IEnumerable<Entity> Entities()

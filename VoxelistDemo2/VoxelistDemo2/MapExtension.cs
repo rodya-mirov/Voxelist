@@ -25,7 +25,7 @@ namespace VoxelistDemo2
             get { return ChunkViewDistance + 2; }
         }
 
-        public override Chunk MakeChunk(int chunkX, int chunkZ)
+        public override Block[,,] MakeChunkBlocks(int chunkX, int chunkZ)
         {
             Block[, ,] output = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
 
@@ -56,7 +56,7 @@ namespace VoxelistDemo2
                 }
             }
 
-            return new Chunk(output, BlockHandler);
+            return output;
         }
 
         private int FindHeight(int xCoordinate, int zCoordinate)
@@ -66,7 +66,7 @@ namespace VoxelistDemo2
 
         private int ValueNoise(int x, int y, int numOctaves, double scale)
         {
-            double output = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(x, y, true));
+            double output = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(x, y, true), 0);
 
             for (int octave = 0; octave < numOctaves; octave++)
             {
@@ -76,11 +76,11 @@ namespace VoxelistDemo2
                 int topY = (y >> octave) << octave;
                 int bottomY = topY + (1 << octave);
 
-                double LT = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(leftX, topY, true));
-                double LB = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(leftX, bottomY, true));
+                double LT = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(leftX, topY, true), octave + 1);
+                double LB = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(leftX, bottomY, true), octave + 1);
 
-                double RT = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(rightX, topY, true));
-                double RB = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(rightX, bottomY, true));
+                double RT = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(rightX, topY, true), octave + 1);
+                double RB = RandomHelper.randomDouble(RandomHelper.combineToSingleSeed(rightX, bottomY, true), octave + 1);
 
                 double left = (LT * (bottomY - y) + LB * (y - topY)) / (bottomY - topY);
                 double right = (RT * (bottomY - y) + RB * (y - topY)) / (bottomY - topY);

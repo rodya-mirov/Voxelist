@@ -60,10 +60,9 @@ namespace VoxelistDemo1
             drawingEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
 
             drawingEffect.EnableDefaultLighting();
-            drawingEffect.AmbientLightColor = Color.White.ToVector3();
-            drawingEffect.DiffuseColor = Color.Wheat.ToVector3();
         }
 
+        #region Drawing Data
         public override bool IsVisible(Block block)
         {
             switch (block.blockID)
@@ -78,7 +77,6 @@ namespace VoxelistDemo1
             }
         }
 
-        #region Drawing Data
         public override GeometryPrimitive DrawingPrimitive(Block block,
             bool includeFrontFace = true, bool includeBackFace = true,
             bool includeTopFace = true, bool includeBottomFace = true,
@@ -95,6 +93,7 @@ namespace VoxelistDemo1
         }
         #endregion Drawing Data
 
+        #region Physics Data
         public override bool IsPassable(Block block)
         {
             switch (block.blockID)
@@ -121,6 +120,24 @@ namespace VoxelistDemo1
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        public override float Friction(Block block)
+        {
+            switch (block.blockID)
+            {
+                case 1:
+                    return 20;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public override Vector3 FrictionVelocity(Block block)
+        {
+            return Vector3.Zero;
+        }
+        #endregion Physics
 
         #region Visual Occlusion Data
         public override bool IsFullAndOpaqueToTheRight(Block block)

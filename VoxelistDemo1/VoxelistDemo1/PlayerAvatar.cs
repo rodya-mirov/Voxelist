@@ -37,7 +37,7 @@ namespace VoxelistDemo1
 
         private Vector3 intentionalVelocity = Vector3.Zero;
 
-        protected override Vector3 Intentional_Velocity
+        protected override Vector3 GroundIntendedVelocity
         {
             get { return intentionalVelocity; }
         }
@@ -96,14 +96,14 @@ namespace VoxelistDemo1
 
             #endregion Walking
 
-            if (YCollidedDown) //this is a good way to see if you're on the ground
+            if (OnGround) //this is a good way to see if you're on the ground
             {
                 //now for jumping
                 if (ks.IsKeyDown(Keys.Space) && !spaceHeld)
                 {
-                    Vector3 pv = Physics_Velocity;
+                    Vector3 pv = Velocity;
                     pv.Y = jumpSpeed;
-                    Physics_Velocity = pv;
+                    Velocity = pv;
                 }
 
                 spaceHeld = ks.IsKeyDown(Keys.Space);

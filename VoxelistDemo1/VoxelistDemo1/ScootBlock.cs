@@ -52,14 +52,11 @@ namespace VoxelistDemo1
         }
 
         private Vector3 intendedVelocity;
-        protected override Vector3 Intentional_Velocity
+        protected override Vector3 GroundIntendedVelocity
         {
             get
             {
-                if (YCollidedDown)
-                    return intendedVelocity;
-                else
-                    return Vector3.Zero;
+                return intendedVelocity;
             }
         }
 

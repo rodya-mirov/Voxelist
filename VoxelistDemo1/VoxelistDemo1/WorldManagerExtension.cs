@@ -37,7 +37,7 @@ namespace VoxelistDemo1
             scooters = new ScootBlock[15];
 
             Skybox = new Skybox();
-            Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxLayout");
+            Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxGraphics");
 
             for (int i = 0; i < scooters.Length; i++)
                 scooters[i] = new ScootBlock(new WorldPosition(0, 0, i, 20, i % 2), this);

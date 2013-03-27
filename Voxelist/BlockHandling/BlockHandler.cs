@@ -171,6 +171,15 @@ namespace Voxelist.BlockHandling
         /// <param name="block"></param>
         /// <returns></returns>
         public abstract BoundingBox PhysicalBlockingBox(Block block);
+
+        /// <summary>
+        /// The amount of friction one achieves while moving along this block.
+        /// </summary>
+        /// <param name="block"></param>
+        /// <returns></returns>
+        public abstract float Friction(Block block);
+
+        public abstract Vector3 FrictionVelocity(Block block);
         #endregion
 
         /// <summary>

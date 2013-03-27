@@ -25,7 +25,7 @@ namespace VoxelistDemo1
             get { return ChunkViewDistance + 3; }
         }
 
-        public override Chunk MakeChunk(int chunkX, int chunkZ)
+        public override Block[,,] MakeChunkBlocks(int chunkX, int chunkZ)
         {
             Block[, ,] output = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
 
@@ -41,6 +41,10 @@ namespace VoxelistDemo1
                         //that are right on the corners of the chunks
 
                         if (y == 0) //uniform ground everywhere...
+                        {
+                            block = new Block(1);
+                        }
+                        else if (y == 10 && x == 5 && z == 5)
                         {
                             block = new Block(1);
                         }
@@ -78,7 +82,7 @@ namespace VoxelistDemo1
                 }
             }
 
-            return new Chunk(output, BlockHandler);
+            return output;
         }
     }
 }

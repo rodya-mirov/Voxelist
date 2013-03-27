@@ -54,11 +54,12 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
+      <ProcessorParameters_ResizeToPowerOfTwo>True</ProcessorParameters_ResizeToPowerOfTwo>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Textures\Skyboxes\SkyboxLayout.png">
-      <Name>SkyboxLayout</Name>
+    <Compile Include="Textures\Skyboxes\SkyboxGraphics.png">
+      <Name>SkyboxGraphics</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>

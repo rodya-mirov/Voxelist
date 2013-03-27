@@ -14,7 +14,7 @@ namespace VoxelistDemo2
     /// 
     /// All blocks have the same texture, roughly.  No block is
     /// designated by blockID:0; otherwise, the block height
-    /// is blockID/4 (and blockID varies from 1 to 4, inclusive)
+    /// is blockID/G (and blockID varies from 1 to G, inclusive)
     /// with full occlusion and blocking.
     /// </summary>
     public class BlockHandlerExtension : BlockHandler
@@ -102,6 +102,19 @@ namespace VoxelistDemo2
                 max.Y = 1;
 
             return new BoundingBox(min, max);
+        }
+
+        public override float Friction(Block block)
+        {
+            if (block.blockID > 0 && block.blockID <= GRANULARITY)
+                return 20f;
+            else
+                throw new ArgumentOutOfRangeException();
+        }
+
+        public override Vector3 FrictionVelocity(Block block)
+        {
+            return Vector3.Zero;
         }
 
         #region Visual Flags

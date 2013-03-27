@@ -24,6 +24,11 @@ namespace Voxelist.Mapping
         public Chunk(Block[, ,] blocks, BlockHandler handler)
         {
             this.handler = handler;
+            OverwriteWith(blocks);
+        }
+
+        public void OverwriteWith(Block[, ,] blocks)
+        {
             containedCubes = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
 
             for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)

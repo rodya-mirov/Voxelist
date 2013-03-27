@@ -24,9 +24,13 @@ namespace Voxelist.Utilities
             return ran.Next(minValue, maxValue);
         }
 
-        public static double randomDouble(int seed)
+        public static double randomDouble(int seed, int skips = 0)
         {
             Random ran = new Random(seed);
+
+            for (int i = 0; i < skips; i++)
+                ran.NextDouble();
+
             return ran.NextDouble();
         }
     }

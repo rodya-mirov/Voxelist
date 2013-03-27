@@ -23,25 +23,68 @@ namespace Voxelist.Rendering
             fixPerspectiveMatrix();
         }
 
-        public static void Update()
+        #region Motion Smoothing
+        public static float MoveSpeed = float.MaxValue;
+
+        public static double RotationSpeed = 19;
+
+        private static float desiredXRotation = 0.0f;
+        private static float desiredYRotation = 0.0f;
+
+        private static WorldPosition DesiredPosition
         {
-            smoothingFrameIndex++;
-            if (smoothingFrameIndex >= smoothingFrames)
-                smoothingFrameIndex -= smoothingFrames;
-
-            RotateY(yRotationRemaining[smoothingFrameIndex]);
-            yRotationRemaining[smoothingFrameIndex] = 0;
-
-            RotateX(xRotationRemaining[smoothingFrameIndex]);
-            xRotationRemaining[smoothingFrameIndex] = 0;
-
-            if (IsFollowingSomething)
+            get
             {
-                Position = FollowTarget.CameraFollowPosition;
+                if (IsFollowingSomething)
+                    return FollowTarget.CameraFollowPosition;
+                else
+                    return Camera.Position;
             }
+        }
+        #endregion
+
+        public static void Update(GameTime gametime)
+        {
+            updateRotations(gametime);
+            updatePosition(gametime);
 
             fixViewMatrix();
             fixPerspectiveMatrix();
+        }
+
+        private static void updatePosition(GameTime gametime)
+        {
+            Vector3 desiredMove = DesiredPosition - Position;
+
+            float length = desiredMove.Length();
+            float maxDist = (float)(MoveSpeed * gametime.ElapsedGameTime.TotalSeconds);
+
+            if (length > maxDist)
+                desiredMove *= (maxDist / length);
+
+            Position += desiredMove;
+        }
+
+        private static void updateRotations(GameTime gametime)
+        {
+            float rotationScale = (float)(RotationSpeed * gametime.ElapsedGameTime.TotalSeconds);
+            if (rotationScale > 1)
+                rotationScale = 1;
+
+            float desiredXRotationChange = desiredXRotation - xRotation;
+            float desiredYRotationChange = desiredYRotation - yRotation;
+
+            while (desiredXRotationChange < -Math.PI)
+                desiredXRotationChange += MathHelper.TwoPi;
+            while (desiredXRotationChange > Math.PI)
+                desiredXRotationChange -= MathHelper.TwoPi;
+            while (desiredYRotationChange < -Math.PI)
+                desiredYRotationChange += MathHelper.TwoPi;
+            while (desiredYRotationChange > Math.PI)
+                desiredYRotationChange -= MathHelper.TwoPi;
+
+            RotateX(desiredXRotationChange * rotationScale);
+            RotateY(desiredYRotationChange * rotationScale);
         }
 
         #region Entity Following
@@ -80,6 +123,7 @@ namespace Voxelist.Rendering
 
             IsFollowingSomething = true;
             FollowTarget = target;
+            Position = FollowTarget.CameraFollowPosition;
 
             return output;
         }
@@ -90,14 +134,6 @@ namespace Voxelist.Rendering
             fixViewMatrix();
             fixPerspectiveMatrix();
         }
-
-        #region Motion Smoothing
-        private static int smoothingFrames = 2;
-        private static int smoothingFrameIndex = 0;
-
-        private static float[] yRotationRemaining = new float[smoothingFrames];
-        private static float[] xRotationRemaining = new float[smoothingFrames];
-        #endregion
 
         #region View Matrix
         private static WorldPosition positionDirect;
@@ -184,8 +220,12 @@ namespace Voxelist.Rendering
         /// <param name="radians"></param>
         public static void RotateHorizontal(float radians)
         {
-            for (int i = 0; i < smoothingFrames; i++)
-                yRotationRemaining[i] += radians / smoothingFrames;
+            desiredYRotation += radians;
+
+            while (desiredYRotation < -MathHelper.Pi)
+                desiredYRotation += MathHelper.TwoPi;
+            while (desiredYRotation > MathHelper.Pi)
+                desiredYRotation -= MathHelper.TwoPi;
         }
 
         /// <summary>
@@ -197,8 +237,12 @@ namespace Voxelist.Rendering
         /// <param name="radians"></param>
         public static void RotateVertical(float radians)
         {
-            for (int i = 0; i < smoothingFrames; i++)
-                xRotationRemaining[i] += radians / smoothingFrames;
+            desiredXRotation += radians;
+
+            while (desiredXRotation < -MathHelper.Pi)
+                desiredXRotation += MathHelper.TwoPi;
+            while (desiredXRotation > MathHelper.Pi)
+                desiredXRotation -= MathHelper.TwoPi;
         }
 
         /// <summary>
@@ -210,7 +254,7 @@ namespace Voxelist.Rendering
         {
             xRotation += radians;
 
-            while (xRotation < MathHelper.Pi)
+            while (xRotation < -MathHelper.Pi)
                 xRotation += MathHelper.TwoPi;
             while (xRotation > MathHelper.Pi)
                 xRotation -= MathHelper.TwoPi;
@@ -227,7 +271,7 @@ namespace Voxelist.Rendering
         {
             yRotation += radians;
 
-            while (yRotation < MathHelper.Pi)
+            while (yRotation < -MathHelper.Pi)
                 yRotation += MathHelper.TwoPi;
             while (yRotation > MathHelper.Pi)
                 yRotation -= MathHelper.TwoPi;

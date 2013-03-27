@@ -12,7 +12,7 @@ namespace VoxelistDemo2
 {
     public class PlayerAvatar : Entity
     {
-        private Vector3 Size = new Vector3(.8f, 1.7f, .8f);
+        private Vector3 Size = new Vector3(.6f, 1.7f, .6f);
 
         public PlayerAvatar(WorldPosition position, WorldManager manager)
             : base(position, manager)
@@ -37,7 +37,7 @@ namespace VoxelistDemo2
 
         private Vector3 intentionalVelocity = Vector3.Zero;
 
-        protected override Vector3 Intentional_Velocity
+        protected override Vector3 GroundIntendedVelocity
         {
             get { return intentionalVelocity; }
         }
@@ -109,14 +109,14 @@ namespace VoxelistDemo2
 
             #endregion Walking
 
-            if (YCollidedDown) //this is a good way to see if you're on the ground
+            if (OnGround)
             {
                 //now for jumping
                 if (ks.IsKeyDown(Keys.Space) && !spaceHeld)
                 {
-                    Vector3 pv = Physics_Velocity;
+                    Vector3 pv = Velocity;
                     pv.Y = jumpSpeed;
-                    Physics_Velocity = pv;
+                    Velocity = pv;
                 }
 
                 spaceHeld = ks.IsKeyDown(Keys.Space);

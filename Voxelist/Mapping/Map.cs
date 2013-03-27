@@ -6,12 +6,13 @@ using Microsoft.Xna.Framework;
 using Voxelist.BlockHandling;
 using Voxelist.Utilities;
 using Voxelist.Rendering;
+using Voxelist.Entities;
 
 namespace Voxelist.Mapping
 {
     public abstract class Map
     {
-        protected BlockHandler BlockHandler { get; set; }
+        public BlockHandler BlockHandler { get; protected set; }
 
         public Map(BlockHandler handler)
         {
@@ -45,7 +46,7 @@ namespace Voxelist.Mapping
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
         /// <returns></returns>
-        public abstract Chunk MakeChunk(int chunkX, int chunkZ);
+        public abstract Block[,,] MakeChunkBlocks(int chunkX, int chunkZ);
 
         #region Physics
         /// <summary>
@@ -55,8 +56,8 @@ namespace Voxelist.Mapping
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
         /// <param name="box"></param>
-        /// <returns></returns>
-        public IEnumerable<BoundingBox> IntersectingBlockBoxes(int chunkX, int chunkZ, BoundingBox box)
+        /// <returns>A tuple; the relevant boundingbox of the block, as well as the friction coefficient of the box.</returns>
+        public IEnumerable<Collider> IntersectingBlocks(int chunkX, int chunkZ, BoundingBox box)
         {
             Point3 cubeMin = Point3.RoundDown(box.Min);
             Point3 cubeMax = Point3.RoundUp(box.Max);
@@ -79,18 +80,14 @@ namespace Voxelist.Mapping
                     {
                         translation.Z = z;
 
-                        Block relevantBlock = GetHighPriorityBlock(chunkX, chunkZ, x, y, z);
-                        if (BlockHandler.IsPassable(relevantBlock))
+                        Block block = GetHighPriorityBlock(chunkX, chunkZ, x, y, z);
+                        if (BlockHandler.IsPassable(block))
                             continue;
 
-                        BoundingBox blockBounds = BlockHandler.PhysicalBlockingBox(relevantBlock);
-                        blockBounds.Min += translation;
-                        blockBounds.Max += translation;
-
-                        if (blockBounds.Intersects(box))
-                        {
-                            yield return blockBounds;
-                        }
+                        yield return new Collider(
+                            block,
+                            translation,
+                            BlockHandler);
                     }
                 }
             }
@@ -123,9 +120,8 @@ namespace Voxelist.Mapping
                 return chunkCache.GetChunk(chunkX, chunkZ);
             else if (urgent)
             {
-                Chunk urgentChunk = MakeChunk(chunkX, chunkZ);
-                chunkCache.AddChunk(urgentChunk, chunkX, chunkZ, true);
-                return urgentChunk;
+                chunkCache.AddChunk(chunkX, chunkZ);
+                return chunkCache.GetChunk(chunkX, chunkZ);
             }
             else
                 return null;

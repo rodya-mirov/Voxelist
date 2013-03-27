@@ -45,7 +45,7 @@ namespace Voxelist.Rendering
             foreach (Entity entity in Entities())
                 entity.Update(gameTime);
 
-            Camera.Update();
+            Camera.Update(gameTime);
         }
 
         protected override void Dispose(bool disposing)

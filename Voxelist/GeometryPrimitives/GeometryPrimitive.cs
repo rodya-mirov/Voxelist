@@ -216,7 +216,7 @@ namespace Voxelist.GeometryPrimitives
 
             //texture dimensions
             float texIncX = textureSize.X * 0.25f; //texture increment x
-            float texIncY = textureSize.Y * 0.5f;  //texture increment y
+            float texIncY = textureSize.Y * 0.25f;  //texture increment y
 
             Vector2 faceTextureSize = new Vector2(texIncX, texIncY);
 
@@ -231,7 +231,7 @@ namespace Voxelist.GeometryPrimitives
                 faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
                     new Vector3(xmid, ymid, zmin),
                     Vector3.Forward, Vector3.Up,
-                    new Vector2(texIncX, texIncY) + textureMinimalCorner,
+                    new Vector2(texIncX, 2.0f * texIncY) + textureMinimalCorner,
                     faceTextureSize,
                     xSize, ySize);
             }
@@ -241,8 +241,8 @@ namespace Voxelist.GeometryPrimitives
             {
                 faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
                     new Vector3(xmid, ymid, zmax),
-                    Vector3.Backward, Vector3.Up,
-                    new Vector2(0, 0) + textureMinimalCorner,
+                    Vector3.Backward, Vector3.Down,
+                    new Vector2(texIncX, 0) + textureMinimalCorner,
                     faceTextureSize,
                     xSize, ySize);
             }
@@ -253,7 +253,7 @@ namespace Voxelist.GeometryPrimitives
                 faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
                     new Vector3(xmid, ymax, zmid),
                     Vector3.Up, Vector3.Forward,
-                    new Vector2(texIncX, 0) + textureMinimalCorner,
+                    new Vector2(texIncX, texIncY) + textureMinimalCorner,
                     faceTextureSize,
                     xSize, zSize);
             }
@@ -264,7 +264,7 @@ namespace Voxelist.GeometryPrimitives
                 faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
                     new Vector3(xmid, ymin, zmid),
                     Vector3.Down, Vector3.Forward,
-                    new Vector2(2.0f * texIncX, 0) + textureMinimalCorner,
+                    new Vector2(texIncX, 3.0f * texIncY) + textureMinimalCorner,
                     faceTextureSize,
                     xSize, zSize);
             }
@@ -274,7 +274,7 @@ namespace Voxelist.GeometryPrimitives
             {
                 faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
                     new Vector3(xmin, ymid, zmid),
-                    Vector3.Left, Vector3.Up,
+                    Vector3.Left, Vector3.Forward,
                     new Vector2(0, texIncY) + textureMinimalCorner,
                     faceTextureSize,
                     zSize, ySize);
@@ -285,7 +285,7 @@ namespace Voxelist.GeometryPrimitives
             {
                 faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
                     new Vector3(xmax, ymid, zmid),
-                    Vector3.Right, Vector3.Up,
+                    Vector3.Right, Vector3.Forward,
                     new Vector2(2.0f * texIncX, texIncY) + textureMinimalCorner,
                     faceTextureSize,
                     zSize, ySize);
@@ -328,7 +328,7 @@ namespace Voxelist.GeometryPrimitives
 
             //texture dimensions
             float texIncX = textureSize.X * 0.25f; //texture increment x
-            float texIncY = textureSize.Y * 0.5f;  //texture increment y
+            float texIncY = textureSize.Y * 0.25f;  //texture increment y
 
             Vector2 faceTextureSize = new Vector2(texIncX, texIncY);
 
@@ -339,23 +339,23 @@ namespace Voxelist.GeometryPrimitives
             faces[0] = GeometryPrimitive.MakeRectangle(
                 new Vector3(xmid, ymid, zmin),
                 Vector3.Backward, Vector3.Up,
-                new Vector2(texIncX, texIncY) + textureMinimalCorner,
+                new Vector2(texIncX, 2.0f * texIncY) + textureMinimalCorner,
                 faceTextureSize,
                 xSize, ySize);
 
             //Back face
             faces[1] = GeometryPrimitive.MakeRectangle(
                 new Vector3(xmid, ymid, zmax),
-                Vector3.Forward, Vector3.Up,
-                new Vector2(0, 0) + textureMinimalCorner,
+                Vector3.Forward, Vector3.Down,
+                new Vector2(texIncX, 0) + textureMinimalCorner,
                 faceTextureSize,
                 xSize, ySize);
 
             //top face
             faces[2] = GeometryPrimitive.MakeRectangle(
                 new Vector3(xmid, ymax, zmid),
-                Vector3.Down, Vector3.Forward,
-                new Vector2(texIncX, 0) + textureMinimalCorner,
+                Vector3.Down, Vector3.Backward,
+                new Vector2(texIncX, texIncY) + textureMinimalCorner,
                 faceTextureSize,
                 xSize, zSize);
 
@@ -363,14 +363,14 @@ namespace Voxelist.GeometryPrimitives
             faces[3] = GeometryPrimitive.MakeRectangle(
                 new Vector3(xmid, ymin, zmid),
                 Vector3.Up, Vector3.Forward,
-                new Vector2(2.0f * texIncX, 0) + textureMinimalCorner,
+                new Vector2(texIncX, 3.0f * texIncY) + textureMinimalCorner,
                 faceTextureSize,
                 xSize, zSize);
 
             //left face
             faces[4] = GeometryPrimitive.MakeRectangle(
                 new Vector3(xmin, ymid, zmid),
-                Vector3.Right, Vector3.Up,
+                Vector3.Right, Vector3.Backward,
                 new Vector2(0, texIncY) + textureMinimalCorner,
                 faceTextureSize,
                 zSize, ySize);
@@ -378,10 +378,23 @@ namespace Voxelist.GeometryPrimitives
             //right face
             faces[5] = GeometryPrimitive.MakeRectangle(
                 new Vector3(xmax, ymid, zmid),
-                Vector3.Left, Vector3.Up,
+                Vector3.Left, Vector3.Backward,
                 new Vector2(2.0f * texIncX, texIncY) + textureMinimalCorner,
                 faceTextureSize,
                 zSize, ySize);
+
+            /*
+
+            //right face
+            if (includeRightFace)
+            {
+                faces[faceIndex++] = GeometryPrimitive.MakeRectangle(
+                    new Vector3(xmax, ymid, zmid),
+                    Vector3.Right, Vector3.Forward,
+                    new Vector2(2.0f * texIncX, texIncY) + textureMinimalCorner,
+                    faceTextureSize,
+                    zSize, ySize);
+            }*/
 
             return GeometryPrimitive.Combine(faces);
         }

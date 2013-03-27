@@ -34,6 +34,15 @@ namespace Voxelist.Mapping
             return new WorldPosition(wp.chunkX, wp.chunkZ, wp.inChunkX + position.X, wp.inChunkY + position.Y, wp.inChunkZ + position.Z);
         }
 
+        public static Vector3 operator -(WorldPosition a, WorldPosition b)
+        {
+            Vector3 change = a.InChunkPosition - b.InChunkPosition;
+            change.X += GameConstants.CHUNK_X_WIDTH * (a.chunkX - b.chunkX);
+            change.Z += GameConstants.CHUNK_Z_LENGTH * (a.chunkZ - b.chunkZ);
+
+            return change;
+        }
+
         public WorldPosition(int chunkX, int chunkZ, float inChunkX, float inChunkY, float inChunkZ)
         {
             this.chunkX = chunkX;
