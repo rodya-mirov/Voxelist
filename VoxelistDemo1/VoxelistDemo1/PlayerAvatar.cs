@@ -32,7 +32,7 @@ namespace VoxelistDemo1
         private float walkSpeed = 1.4f;
         private float runSpeed = 4.9f;
 
-        private float jumpSpeed = 5f;
+        private float jumpSpeed = 4.5f;
         private bool spaceHeld = false;
 
         private Vector3 intentionalVelocity = Vector3.Zero;

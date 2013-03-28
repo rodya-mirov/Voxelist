@@ -152,9 +152,9 @@ namespace Voxelist.Entities
 
         protected void physicsUpdate(GameTime gametime)
         {
-            physicsUpdate_Acceleration(gametime);
-            physicsUpdate_Velocity(gametime);
             physicsUpdate_Position(gametime);
+            physicsUpdate_Velocity(gametime);
+            physicsUpdate_Acceleration(gametime);
         }
 
         private void physicsUpdate_Acceleration(GameTime gametime)
