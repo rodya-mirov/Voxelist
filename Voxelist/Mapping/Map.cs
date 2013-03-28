@@ -181,18 +181,21 @@ namespace Voxelist.Mapping
         {
             Vector3 translation = Vector3.Zero;
 
-            for (int chunkOffsetX = -ChunkViewDistance; chunkOffsetX <= ChunkViewDistance; chunkOffsetX++)
+            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
             {
-                translation.X = (chunkOffsetX << GameConstants.CHUNK_X_LOG);
-
-                for (int chunkOffsetZ = -ChunkViewDistance; chunkOffsetZ <= ChunkViewDistance; chunkOffsetZ++)
+                for (int chunkOffsetX = -ChunkViewDistance; chunkOffsetX <= ChunkViewDistance; chunkOffsetX++)
                 {
-                    translation.Z = (chunkOffsetZ << GameConstants.CHUNK_Z_LOG);
+                    translation.X = (chunkOffsetX << GameConstants.CHUNK_X_LOG);
 
-                    Chunk toDraw = GetChunk(chunkOffsetX + Camera.ChunkX, chunkOffsetZ + Camera.ChunkZ, false);
+                    for (int chunkOffsetZ = -ChunkViewDistance; chunkOffsetZ <= ChunkViewDistance; chunkOffsetZ++)
+                    {
+                        translation.Z = (chunkOffsetZ << GameConstants.CHUNK_Z_LOG);
 
-                    if (toDraw != null)
-                        toDraw.Draw(translation);
+                        Chunk toDraw = GetChunk(chunkOffsetX + Camera.ChunkX, chunkOffsetZ + Camera.ChunkZ, false);
+
+                        if (toDraw != null)
+                            toDraw.Draw(translation, textureIndex);
+                    }
                 }
             }
         }

@@ -163,16 +163,15 @@ namespace Voxelist.Entities
 
             Acceleration += GravityAcceleration;
 
+            Vector3 dragContribution = Airborne_Drag * (-Velocity);
+            Acceleration += dragContribution;
+
             if (OnGround)
             {
                 Vector3 frictionContribution = GroundIntendedVelocity;
                 frictionContribution += GroundFrictionVelocity_Experienced - Velocity;
 
                 Acceleration += GroundFrictionScale_Experienced * frictionContribution;
-            }
-            else
-            {
-                Acceleration += Airborne_Drag * (-Velocity);
             }
         }
 

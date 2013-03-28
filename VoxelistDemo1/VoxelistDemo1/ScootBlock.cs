@@ -53,7 +53,7 @@ namespace VoxelistDemo1
 
         public override float Friction_Induced
         {
-            get { return 50; }
+            get { return 20; }
         }
 
         private Vector3 intendedVelocity;

@@ -166,34 +166,31 @@ namespace Voxelist.Mapping
         /// <typeparam name="HandlerType"></typeparam>
         /// <param name="chunk"></param>
         /// <param name="drawLocation"></param>
-        public void Draw(Vector3 drawLocation)
+        public void Draw(Vector3 drawLocation, int textureIndex)
         {
             if (Camera.ChunkIsCompletelyOffScreen(drawLocation))
                 return;
 
-            for (int textureIndex = 0; textureIndex < handler.TotalNumberOfTextures; textureIndex++)
+            if (!usesTextureIndex[textureIndex])
+                return;
+
+            BasicEffect drawingEffect = handler.DrawingEffect(textureIndex);
+
+            drawingEffect.World = Matrix.CreateTranslation(drawLocation);
+            drawingEffect.Projection = Camera.ProjectionMatrix;
+            drawingEffect.View = Camera.ViewMatrix;
+
+            foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
             {
-                if (!usesTextureIndex[textureIndex])
-                    continue;
+                pass.Apply();
 
-                BasicEffect drawingEffect = handler.DrawingEffect(textureIndex);
-
-                drawingEffect.World = Matrix.CreateTranslation(drawLocation);
-                drawingEffect.Projection = Camera.ProjectionMatrix;
-                drawingEffect.View = Camera.ViewMatrix;
-
-                foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-
-                    drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
-                        PrimitiveType.TriangleList,
-                        combinedPrimitives[textureIndex].Vertices,
-                        0, combinedVerticesCount[textureIndex],
-                        combinedPrimitives[textureIndex].Indices,
-                        0, combinedTrianglesCount[textureIndex]
-                        );
-                }
+                drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
+                    PrimitiveType.TriangleList,
+                    combinedPrimitives[textureIndex].Vertices,
+                    0, combinedVerticesCount[textureIndex],
+                    combinedPrimitives[textureIndex].Indices,
+                    0, combinedTrianglesCount[textureIndex]
+                    );
             }
         }
     }
