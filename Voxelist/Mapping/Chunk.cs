@@ -21,27 +21,17 @@ namespace Voxelist.Mapping
         protected BlockHandler handler;
         protected Block[, ,] containedCubes;
 
-        public Chunk(Block[, ,] blocks, BlockHandler handler)
+        public Chunk(Map map, int chunkX, int chunkZ, BlockHandler handler)
         {
             this.handler = handler;
-            OverwriteWith(blocks);
+
+            containedCubes = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
+            OverwriteBlockDataWith(map, chunkX, chunkZ);
         }
 
-        public void OverwriteWith(Block[, ,] blocks)
+        public void OverwriteBlockDataWith(Map map, int chunkX, int chunkZ)
         {
-            containedCubes = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
-
-            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
-            {
-                for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
-                {
-                    for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
-                    {
-                        containedCubes[x, y, z] = blocks[x, y, z];
-                    }
-                }
-            }
-
+            map.MakeChunkBlocks(chunkX, chunkZ, containedCubes);
             setupDrawingAssistance();
         }
 

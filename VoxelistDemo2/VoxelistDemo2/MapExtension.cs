@@ -25,10 +25,8 @@ namespace VoxelistDemo2
             get { return ChunkViewDistance + 2; }
         }
 
-        public override Block[,,] MakeChunkBlocks(int chunkX, int chunkZ)
+        public override void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill)
         {
-            Block[, ,] output = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
-
             for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
             {
                 for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
@@ -47,16 +45,14 @@ namespace VoxelistDemo2
                     for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                     {
                         if (y < fullSquares)
-                            output[x, y, z] = new Block(BlockHandlerExtension.GRANULARITY);
+                            arrayToFill[x, y, z] = new Block(BlockHandlerExtension.GRANULARITY);
                         else if (y == fullSquares)
-                            output[x, y, z] = new Block(leftover);
+                            arrayToFill[x, y, z] = new Block(leftover);
                         else
-                            output[x, y, z] = new Block(0);
+                            arrayToFill[x, y, z] = new Block(0);
                     }
                 }
             }
-
-            return output;
         }
 
         private int FindHeight(int xCoordinate, int zCoordinate)

@@ -45,8 +45,9 @@ namespace Voxelist.Mapping
         /// </summary>
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
+        /// <param name="arrayToFill">The array to fill with block data</param>
         /// <returns></returns>
-        public abstract Block[,,] MakeChunkBlocks(int chunkX, int chunkZ);
+        public abstract void MakeChunkBlocks(int chunkX, int chunkZ, Block[,,] arrayToFill);
 
         #region Physics
         /// <summary>

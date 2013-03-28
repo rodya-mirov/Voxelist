@@ -277,7 +277,7 @@ namespace Voxelist.GeometryPrimitives
                     Vector3.Left, Vector3.Forward,
                     new Vector2(0, texIncY) + textureMinimalCorner,
                     faceTextureSize,
-                    zSize, ySize);
+                    ySize, zSize);
             }
 
             //right face
@@ -288,7 +288,7 @@ namespace Voxelist.GeometryPrimitives
                     Vector3.Right, Vector3.Forward,
                     new Vector2(2.0f * texIncX, texIncY) + textureMinimalCorner,
                     faceTextureSize,
-                    zSize, ySize);
+                    ySize, zSize);
             }
 
             return GeometryPrimitive.Combine(faces);

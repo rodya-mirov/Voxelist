@@ -25,10 +25,8 @@ namespace VoxelistDemo1
             get { return ChunkViewDistance + 3; }
         }
 
-        public override Block[,,] MakeChunkBlocks(int chunkX, int chunkZ)
+        public override void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill)
         {
-            Block[, ,] output = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
-
             for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
             {
                 for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
@@ -80,12 +78,10 @@ namespace VoxelistDemo1
                                 block = new Block(0);
                         }
 
-                        output[x, y, z] = block;
+                        arrayToFill[x, y, z] = block;
                     }
                 }
             }
-
-            return output;
         }
     }
 }
