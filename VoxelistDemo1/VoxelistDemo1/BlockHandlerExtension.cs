@@ -47,22 +47,62 @@ namespace VoxelistDemo1
 
         private GeometryPrimitive[] fullSizeBlocks;
 
-        private static BasicEffect drawingEffect;
-        public override BasicEffect DrawingEffect { get { return drawingEffect; } }
-
         public override void LoadContent(Game game)
         {
             base.LoadContent(game);
 
-            drawingEffect = new BasicEffect(game.GraphicsDevice);
-
-            drawingEffect.TextureEnabled = true;
-            drawingEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
-
-            drawingEffect.EnableDefaultLighting();
+            setupDrawingEffects(game);
         }
 
         #region Drawing Data
+        public override int TotalNumberOfTextures
+        {
+            get { return 2; }
+        }
+
+        public override int TextureIndex(Block block)
+        {
+            switch (block.blockID)
+            {
+                case 1:
+                    return 0;
+
+                case 2:
+                    return 1;
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private static void setupDrawingEffects(Game game)
+        {
+            dirtEffect = new BasicEffect(game.GraphicsDevice);
+            dirtEffect.TextureEnabled = true;
+            dirtEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
+            dirtEffect.EnableDefaultLighting();
+
+            iceEffect = new BasicEffect(game.GraphicsDevice);
+            iceEffect.TextureEnabled = true;
+            iceEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Ice");
+            iceEffect.EnableDefaultLighting();
+        }
+
+        private static BasicEffect dirtEffect, iceEffect;
+        public override BasicEffect DrawingEffect(int textureID)
+        {
+            switch (textureID)
+            {
+                case 0:
+                    return dirtEffect;
+
+                case 1:
+                    return iceEffect;
+
+                default: throw new NotImplementedException();
+            }
+        }
+
         public override bool IsVisible(Block block)
         {
             switch (block.blockID)
@@ -71,6 +111,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
@@ -85,6 +126,7 @@ namespace VoxelistDemo1
             switch (block.blockID)
             {
                 case 1:
+                case 2:
                     int flags = ConvertBoolFlagsToInt(includeFrontFace, includeBackFace, includeTopFace, includeBottomFace, includeLeftFace, includeRightFace);
                     return fullSizeBlocks[flags];
 
@@ -102,6 +144,7 @@ namespace VoxelistDemo1
                     return true;
 
                 case 1:
+                case 2:
                     return false;
 
                 default:
@@ -114,6 +157,7 @@ namespace VoxelistDemo1
             switch (block.blockID)
             {
                 case 1:
+                case 2:
                     return new BoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
 
                 default:
@@ -127,6 +171,9 @@ namespace VoxelistDemo1
             {
                 case 1:
                     return 20;
+
+                case 2:
+                    return 0.3f;
 
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -148,6 +195,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
@@ -162,6 +210,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
@@ -176,6 +225,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
@@ -190,6 +240,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
@@ -204,6 +255,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
@@ -218,6 +270,7 @@ namespace VoxelistDemo1
                     return false;
 
                 case 1:
+                case 2:
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();

@@ -28,18 +28,18 @@ namespace VoxelistDemo2
         }
 
         private GeometryPrimitive[,] primitives; //first index is blockID, second is the drawing flags
-        private BasicEffect drawingEffect;
+        private BasicEffect dirtEffect;
 
         public override void LoadContent(Game game)
         {
             base.LoadContent(game);
 
-            drawingEffect = new BasicEffect(game.GraphicsDevice);
+            dirtEffect = new BasicEffect(game.GraphicsDevice);
 
-            drawingEffect.TextureEnabled = true;
-            drawingEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
+            dirtEffect.TextureEnabled = true;
+            dirtEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
 
-            drawingEffect.EnableDefaultLighting();
+            dirtEffect.EnableDefaultLighting();
 
             primitives = new GeometryPrimitive[GRANULARITY, 64];
 
@@ -71,9 +71,19 @@ namespace VoxelistDemo2
             }
         }
 
-        public override BasicEffect DrawingEffect
+        public override int TotalNumberOfTextures
         {
-            get { return drawingEffect; }
+            get { return 1; }
+        }
+
+        public override int TextureIndex(Block block)
+        {
+            return 0;
+        }
+
+        public override BasicEffect DrawingEffect(int textureIndex)
+        {
+            return dirtEffect;
         }
 
         public override GeometryPrimitive DrawingPrimitive(Block block,
@@ -117,12 +127,12 @@ namespace VoxelistDemo2
             return Vector3.Zero;
         }
 
-        #region Visual Flags
         public override bool IsVisible(Block block)
         {
             return block.blockID != 0;
         }
 
+        #region Occlusion Flags
         public override bool IsFullAndOpaqueToTheTop(Block block)
         {
             return block.blockID == GRANULARITY;

@@ -51,13 +51,15 @@ namespace VoxelistDemo1
             get { return new BoundingBox(Position.InChunkPosition + buffer * Vector3.One, Position.InChunkPosition + (buffer + size) * Vector3.One); }
         }
 
+        public override float Friction_Induced
+        {
+            get { return 50; }
+        }
+
         private Vector3 intendedVelocity;
         protected override Vector3 GroundIntendedVelocity
         {
-            get
-            {
-                return intendedVelocity;
-            }
+            get { return intendedVelocity; }
         }
 
         protected override float UpStepSize

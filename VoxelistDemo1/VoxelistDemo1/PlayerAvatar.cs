@@ -42,6 +42,11 @@ namespace VoxelistDemo1
             get { return intentionalVelocity; }
         }
 
+        public override float Friction_Induced
+        {
+            get { return 50; }
+        }
+
         public override void Update(GameTime gametime)
         {
             KeyboardState ks = Keyboard.GetState();

@@ -42,6 +42,11 @@ namespace VoxelistDemo2
             get { return intentionalVelocity; }
         }
 
+        public override float Friction_Induced
+        {
+            get { return 50; }
+        }
+
         protected override float UpStepSize
         {
             get { return 0.52f; }

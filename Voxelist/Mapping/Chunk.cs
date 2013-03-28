@@ -51,51 +51,65 @@ namespace Voxelist.Mapping
         }
 
         #region Drawing assistance
-        private GeometryPrimitive combinedPrimitives;
-        private int combinedVerticesCount, combinedTrianglesCount;
+        private GeometryPrimitive[] combinedPrimitives;
+        private int[] combinedVerticesCount, combinedTrianglesCount;
+        private bool[] usesTextureIndex;
 
         private void setupDrawingAssistance()
         {
-            List<GeometryPrimitive> buildingBlocks = new List<GeometryPrimitive>();
+            combinedPrimitives = new GeometryPrimitive[handler.TotalNumberOfTextures];
+            combinedVerticesCount = new int[handler.TotalNumberOfTextures];
+            combinedTrianglesCount = new int[handler.TotalNumberOfTextures];
+            usesTextureIndex = new bool[handler.TotalNumberOfTextures];
 
-            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
+            for (int textureIndex = 0; textureIndex < handler.TotalNumberOfTextures; textureIndex++)
             {
-                for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
+                List<GeometryPrimitive> buildingBlocks = new List<GeometryPrimitive>();
+
+                for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
                 {
-                    for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
+                    for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                     {
-                        Block relevantBlock = containedCubes[x, y, z];
+                        for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
+                        {
+                            Block relevantBlock = containedCubes[x, y, z];
 
-                        if (!handler.IsVisible(relevantBlock))
-                            continue;
+                            if (!handler.IsVisible(relevantBlock) || handler.TextureIndex(relevantBlock) != textureIndex)
+                                continue;
 
-                        bool includeFrontFace, includeBackFace;
-                        bool includeTopFace, includeBottomFace;
-                        bool includeLeftFace, includeRightFace;
+                            bool includeFrontFace, includeBackFace;
+                            bool includeTopFace, includeBottomFace;
+                            bool includeLeftFace, includeRightFace;
 
-                        MakeOcclusionTags(x, y, z,
-                            out includeFrontFace, out includeBackFace,
-                            out includeTopFace, out includeBottomFace,
-                            out includeLeftFace, out includeRightFace);
+                            MakeOcclusionTags(x, y, z,
+                                out includeFrontFace, out includeBackFace,
+                                out includeTopFace, out includeBottomFace,
+                                out includeLeftFace, out includeRightFace);
 
-                        GeometryPrimitive drawingPrimitive = handler.DrawingPrimitive(relevantBlock,
-                            includeFrontFace, includeBackFace, includeTopFace, includeBottomFace,
-                            includeLeftFace, includeRightFace);
+                            GeometryPrimitive drawingPrimitive = handler.DrawingPrimitive(relevantBlock,
+                                includeFrontFace, includeBackFace, includeTopFace, includeBottomFace,
+                                includeLeftFace, includeRightFace);
 
-                        buildingBlocks.Add(drawingPrimitive.Translate(new Vector3(x, y, z)));
+                            buildingBlocks.Add(drawingPrimitive.Translate(new Vector3(x, y, z)));
+                        }
                     }
                 }
+
+                GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
+                buildingBlocks.CopyTo(primitivesArray);
+
+                usesTextureIndex[textureIndex] = primitivesArray.Length > 0;
+
+                if (usesTextureIndex[textureIndex])
+                {
+                    combinedPrimitives[textureIndex] = GeometryPrimitive.Combine(primitivesArray);
+                    combinedVerticesCount[textureIndex] = combinedPrimitives[textureIndex].Vertices.Length;
+                    combinedTrianglesCount[textureIndex] = combinedPrimitives[textureIndex].Indices.Length / 3;
+                }
             }
-
-            GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
-            buildingBlocks.CopyTo(primitivesArray);
-
-            combinedPrimitives = GeometryPrimitive.Combine(primitivesArray);
-            combinedVerticesCount = combinedPrimitives.Vertices.Length;
-            combinedTrianglesCount = combinedPrimitives.Indices.Length / 3;
         }
 
-        private void MakeOcclusionTags(int x, int y, int z, 
+        private void MakeOcclusionTags(int x, int y, int z,
             out bool includeFrontFace, out bool includeBackFace,
             out bool includeTopFace, out bool includeBottomFace,
             out bool includeLeftFace, out bool includeRightFace)
@@ -157,22 +171,29 @@ namespace Voxelist.Mapping
             if (Camera.ChunkIsCompletelyOffScreen(drawLocation))
                 return;
 
-            handler.DrawingEffect.World = Matrix.CreateTranslation(drawLocation);
-
-            handler.DrawingEffect.Projection = Camera.ProjectionMatrix;
-            handler.DrawingEffect.View = Camera.ViewMatrix;
-
-            foreach (EffectPass pass in handler.DrawingEffect.CurrentTechnique.Passes)
+            for (int textureIndex = 0; textureIndex < handler.TotalNumberOfTextures; textureIndex++)
             {
-                pass.Apply();
+                if (!usesTextureIndex[textureIndex])
+                    continue;
 
-                handler.DrawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
-                    PrimitiveType.TriangleList,
-                    combinedPrimitives.Vertices,
-                    0, combinedVerticesCount,
-                    combinedPrimitives.Indices,
-                    0, combinedTrianglesCount
-                    );
+                BasicEffect drawingEffect = handler.DrawingEffect(textureIndex);
+
+                drawingEffect.World = Matrix.CreateTranslation(drawLocation);
+                drawingEffect.Projection = Camera.ProjectionMatrix;
+                drawingEffect.View = Camera.ViewMatrix;
+
+                foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+
+                    drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
+                        PrimitiveType.TriangleList,
+                        combinedPrimitives[textureIndex].Vertices,
+                        0, combinedVerticesCount[textureIndex],
+                        combinedPrimitives[textureIndex].Indices,
+                        0, combinedTrianglesCount[textureIndex]
+                        );
+                }
             }
         }
     }

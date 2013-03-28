@@ -40,9 +40,12 @@ namespace VoxelistDemo1
                         //ground everywhere, and pyramid mountains
                         //that are right on the corners of the chunks
 
-                        if (y == 0) //uniform ground everywhere...
+                        if (y == 0) //uniform ground everywhere, but sometimes ice
                         {
-                            block = new Block(1);
+                            if ((chunkX & 1) == 0 || (chunkZ & 1) == 0)
+                                block = new Block(1);
+                            else
+                                block = new Block(2);
                         }
                         else if (y == 10 && x == 5 && z == 5)
                         {

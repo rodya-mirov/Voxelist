@@ -17,12 +17,13 @@ namespace Voxelist.Entities
 
         protected Entity(WorldPosition position, WorldManager manager)
         {
-            this.Position = position;
             this.WorldManager = manager;
+            this.Position = position;
 
             this.GroundFrictionScale_Experienced = 100f;
             this.GroundFrictionVelocity_Experienced = Vector3.Zero;
         }
+
 
         /// <summary>
         /// This represents a "position" for the Entity, including
@@ -35,7 +36,12 @@ namespace Voxelist.Entities
         /// BoundingBox property by that same amount.  This fact is
         /// intrinsic to the physics calculations.
         /// </summary>
-        public WorldPosition Position { get; protected set; }
+        public WorldPosition Position
+        {
+            get { return _position; }
+            protected set { _position = value; }
+        }
+        private WorldPosition _position;
 
         /// <summary>
         /// When following this target, you don't necessarily want to sit
@@ -86,6 +92,24 @@ namespace Voxelist.Entities
         /// </summary>
         public virtual bool CollidesWithMapGeometry { get { return true; } }
 
+        /// <summary>
+        /// Whether or not this object acts as a wall for the given other object
+        /// (that is, if other tries to run through this, is it stopped?)
+        /// 
+        /// Default is:
+        ///     other.CollidesWithMapGeometry && other != this;
+        ///     
+        /// Try to maintain the following:
+        ///     ! this.IsAWallFor(this)
+        ///     this.IsAWallFor(other) == other.IsAWallFor(this)
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public virtual bool IsAWallFor(Entity other)
+        {
+            return other.CollidesWithMapGeometry && other != this;
+        }
+
         protected Vector3 Acceleration { get; set; }
 
         protected Vector3 Velocity { get; set; }
@@ -117,6 +141,9 @@ namespace Voxelist.Entities
             get;
             private set;
         }
+
+        public abstract float Friction_Induced { get; }
+        public virtual Vector3 FrictionVelocity_Induced { get { return Velocity; } }
 
         protected float Airborne_Drag
         {
@@ -161,6 +188,8 @@ namespace Voxelist.Entities
             MoveAndResolveCollisions(intendedChange);
         }
 
+        protected bool UseStep { get { return false; } }
+
         /// <summary>
         /// Resolve collisions with other objects. That is, given a
         /// change vector (intendedChange), reduce this vector as needed
@@ -181,7 +210,7 @@ namespace Voxelist.Entities
         /// <returns></returns>
         private void MoveAndResolveCollisions(Vector3 intendedChange)
         {
-            ResetCollisionTrackers();
+            bool StartedOnGround = OnGround;
 
             Vector3 originalIntendedChange = intendedChange;
             Vector3 pv = Velocity;
@@ -192,14 +221,19 @@ namespace Voxelist.Entities
             float relevantFriction;
             Vector3 frictionVelocity;
 
+            ResetCollisionTrackers();
+
             //first step up
-            upstep = ResolveCollisions(BoundingBox, upstep, ref upStepHitCeiling, Dimension.Y,
-                out relevantFriction, out frictionVelocity);
-            Position += new Vector3(0, upstep, 0);
+            if (UseStep && StartedOnGround)
+            {
+                upstep = DetectAndFixCollisions(BoundingBox, upstep, ref upStepHitCeiling, Dimension.Y,
+                    out relevantFriction, out frictionVelocity);
+                Position += new Vector3(0, upstep, 0);
+            }
 
             //now resolve lateral movement (x)
             bool collidedX = false;
-            intendedChange.X = ResolveCollisions(BoundingBox, intendedChange.X, ref collidedX, Dimension.X,
+            intendedChange.X = DetectAndFixCollisions(BoundingBox, intendedChange.X, ref collidedX, Dimension.X,
                 out relevantFriction, out frictionVelocity);
 
             if (collidedX)
@@ -215,7 +249,7 @@ namespace Voxelist.Entities
 
             //...and lateral movement (z)
             bool collidedZ = false;
-            intendedChange.Z = ResolveCollisions(BoundingBox, intendedChange.Z, ref collidedZ, Dimension.Z,
+            intendedChange.Z = DetectAndFixCollisions(BoundingBox, intendedChange.Z, ref collidedZ, Dimension.Z,
                 out relevantFriction, out frictionVelocity);
 
             if (collidedZ)
@@ -233,25 +267,30 @@ namespace Voxelist.Entities
             bool downStepHitFloor = false;
 
             //now step down..
-            downstep = ResolveCollisions(BoundingBox, downstep, ref downStepHitFloor, Dimension.Y,
-                out relevantFriction, out frictionVelocity);
-            Position += new Vector3(0, downstep, 0);
+            if (UseStep && StartedOnGround)
+            {
+                downstep = DetectAndFixCollisions(BoundingBox, downstep, ref downStepHitFloor, Dimension.Y,
+                    out relevantFriction, out frictionVelocity);
+                Position += new Vector3(0, downstep, 0);
+            }
 
             //and finally do any y-changes
             bool collidedY = false;
-            intendedChange.Y = ResolveCollisions(BoundingBox, intendedChange.Y, ref collidedY, Dimension.Y,
+            intendedChange.Y = DetectAndFixCollisions(BoundingBox, intendedChange.Y, ref collidedY, Dimension.Y,
                 out relevantFriction, out frictionVelocity);
 
             if (collidedY)
             {
                 pv.Y = 0;
                 if (originalIntendedChange.Y <= 0)
+                {
                     YCollidedDown = true;
+
+                    GroundFrictionScale_Experienced = relevantFriction;
+                    GroundFrictionVelocity_Experienced = frictionVelocity;
+                }
                 if (originalIntendedChange.Y >= 0)
                     YCollidedUp = true;
-
-                GroundFrictionScale_Experienced = relevantFriction;
-                GroundFrictionVelocity_Experienced = frictionVelocity;
             }
 
             Position += new Vector3(0, intendedChange.Y, 0);
@@ -276,6 +315,12 @@ namespace Voxelist.Entities
                 foreach (Collider box in Map.IntersectingBlocks(Position.chunkX, Position.chunkZ, currentBoundingBox))
                     yield return box;
             }
+
+            foreach (Entity other in WorldManager.Entities())
+            {
+                if (other.IsAWallFor(this))
+                    yield return new Collider(other, Position.chunkX, Position.chunkZ);
+            }
         }
 
         /// <summary>
@@ -295,7 +340,7 @@ namespace Voxelist.Entities
         /// <param name="movementDimension">Which dimension of movement is currently being considered.</param>
         /// <param name="effectiveFriction">The amount of friction the object in question will be experiencing.</param>
         /// <returns></returns>
-        private float ResolveCollisions(BoundingBox unmovedBox, float originalIntendedChange, ref bool collided,
+        private float DetectAndFixCollisions(BoundingBox unmovedBox, float originalIntendedChange, ref bool collided,
             Dimension movementDimension, out float effectiveFriction, out Vector3 frictionVelocity)
         {
             float relevantChange = originalIntendedChange;
@@ -312,9 +357,9 @@ namespace Voxelist.Entities
             {
                 switch (movementDimension)//then affect the relevant maximum
                 {
-                    case Dimension.X: boxmax.X += relevantChange; break;
-                    case Dimension.Y: boxmax.Y += relevantChange; break;
-                    case Dimension.Z: boxmax.Z += relevantChange; break;
+                    case Dimension.X: boxmax.X += relevantChange + GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
+                    case Dimension.Y: boxmax.Y += relevantChange + GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
+                    case Dimension.Z: boxmax.Z += relevantChange + GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
                     default: throw new NotImplementedException();
                 }
             }
@@ -322,9 +367,9 @@ namespace Voxelist.Entities
             {
                 switch (movementDimension)//then affect the relevant minimum
                 {
-                    case Dimension.X: boxmin.X += relevantChange; break;
-                    case Dimension.Y: boxmin.Y += relevantChange; break;
-                    case Dimension.Z: boxmin.Z += relevantChange; break;
+                    case Dimension.X: boxmin.X += relevantChange - GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
+                    case Dimension.Y: boxmin.Y += relevantChange - GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
+                    case Dimension.Z: boxmin.Z += relevantChange - GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
                     default: throw new NotImplementedException();
                 }
             }
@@ -334,6 +379,9 @@ namespace Voxelist.Entities
             foreach (Collider collider in Collisions(stretchedBox))
             {
                 BoundingBox blockBounds = collider.BoundingBox;
+
+                if (blockBounds.Intersects(unmovedBox))
+                    throw new NotImplementedException();
 
                 if (!blockBounds.Intersects(stretchedBox))
                     continue;
@@ -388,6 +436,9 @@ namespace Voxelist.Entities
                     }
                 }
             }
+
+            if (relevantChange * originalIntendedChange < 0)
+                relevantChange = 0;
 
             return relevantChange;
         }

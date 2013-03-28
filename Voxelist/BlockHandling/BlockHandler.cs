@@ -18,12 +18,13 @@ namespace Voxelist.BlockHandling
     /// </summary>
     public abstract class BlockHandler
     {
-        /// <summary>
-        /// Whether or not to draw this block.
-        /// </summary>
-        /// <param name="block"></param>
-        /// <returns></returns>
-        public abstract bool IsVisible(Block block);
+
+        protected Game Game;
+
+        public virtual void LoadContent(Game game)
+        {
+            this.Game = game;
+        }
 
         #region Visual Obstruction Flags
         public static int ConvertBoolFlagsToInt(
@@ -182,6 +183,20 @@ namespace Voxelist.BlockHandling
         public abstract Vector3 FrictionVelocity(Block block);
         #endregion
 
+        #region Drawing Data
+        public abstract int TotalNumberOfTextures { get; }
+
+        public abstract BasicEffect DrawingEffect(int textureIndex);
+
+        public abstract int TextureIndex(Block block);
+
+        /// <summary>
+        /// Whether or not to draw this block.
+        /// </summary>
+        /// <param name="block"></param>
+        /// <returns></returns>
+        public abstract bool IsVisible(Block block);
+
         /// <summary>
         /// The model for drawing this block.  Not required to
         /// be implemented when IsVisible is false.
@@ -196,14 +211,6 @@ namespace Voxelist.BlockHandling
             bool includeFrontFace, bool includeBackFace,
             bool includeTopFace, bool includeBottomFace,
             bool includeLeftFace, bool includeRightFace);
-
-        protected Game Game;
-
-        public virtual void LoadContent(Game game)
-        {
-            this.Game = game;
-        }
-
-        public abstract BasicEffect DrawingEffect { get; }
+        #endregion
     }
 }
