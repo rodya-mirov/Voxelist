@@ -101,6 +101,9 @@ namespace Voxelist.Mapping
                     combinedVerticesCount[textureIndex] = combinedPrimitives[textureIndex].Vertices.Length;
                     combinedTrianglesCount[textureIndex] = combinedPrimitives[textureIndex].Indices.Length / 3;
                 }
+
+                if (combinedVerticesCount[textureIndex] == 0)
+                    usesTextureIndex[textureIndex] = false;
             }
         }
 
