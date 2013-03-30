@@ -47,6 +47,27 @@ namespace VoxelistDemo1
             get { return 50; }
         }
 
+        public override float GroundFrictionModifier
+        {
+            get
+            {
+                switch (moveState)
+                {
+                    case MovementState.RUNNING:
+                        return 1;
+
+                    case MovementState.WALKING:
+                        return 20;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+        }
+
+        private enum MovementState { WALKING, RUNNING };
+        private MovementState moveState = MovementState.RUNNING;
+
         public override void Update(GameTime gametime)
         {
             KeyboardState ks = Keyboard.GetState();
@@ -57,9 +78,15 @@ namespace VoxelistDemo1
             float speed;
 
             if (ks.IsKeyDown(Keys.LeftShift) || ks.IsKeyDown(Keys.RightShift))
+            {
+                moveState = MovementState.WALKING;
                 speed = walkSpeed;
+            }
             else
+            {
                 speed = runSpeed;
+                moveState = MovementState.RUNNING;
+            }
 
             float angle = 0;
 

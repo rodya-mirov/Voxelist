@@ -50,12 +50,23 @@ namespace Voxelist.Mapping
         private int[] combinedVerticesCount, combinedTrianglesCount;
         private bool[] usesTextureIndex;
 
+        private BoundingBox visualBoundingBox;
+
         private void setupDrawingAssistance()
         {
             combinedPrimitives = new GeometryPrimitive[handler.TotalNumberOfTextures];
             combinedVerticesCount = new int[handler.TotalNumberOfTextures];
             combinedTrianglesCount = new int[handler.TotalNumberOfTextures];
             usesTextureIndex = new bool[handler.TotalNumberOfTextures];
+
+            float xmin = GameConstants.CHUNK_X_WIDTH;
+            float xmax = 0;
+
+            float ymin = GameConstants.CHUNK_Y_HEIGHT;
+            float ymax = 0;
+
+            float zmin = GameConstants.CHUNK_Z_LENGTH;
+            float zmax = 0;
 
             for (int textureIndex = 0; textureIndex < handler.TotalNumberOfTextures; textureIndex++)
             {
@@ -81,6 +92,20 @@ namespace Voxelist.Mapping
                                 out includeTopFace, out includeBottomFace,
                                 out includeLeftFace, out includeRightFace);
 
+                            bool hasVisibleFace = (includeTopFace || includeBottomFace || includeBackFace || includeFrontFace || includeRightFace || includeLeftFace);
+
+                            if (!hasVisibleFace)
+                                continue;
+
+                            xmin = MathHelper.Min(xmin, x);
+                            xmax = MathHelper.Max(xmax, x + 1);
+
+                            ymin = MathHelper.Min(ymin, y);
+                            ymax = MathHelper.Max(ymax, y + 1);
+
+                            zmin = MathHelper.Min(zmin, z);
+                            zmax = MathHelper.Max(zmax, z + 1);
+
                             GeometryPrimitive drawingPrimitive = handler.DrawingPrimitive(relevantBlock,
                                 includeFrontFace, includeBackFace, includeTopFace, includeBottomFace,
                                 includeLeftFace, includeRightFace);
@@ -89,6 +114,10 @@ namespace Voxelist.Mapping
                         }
                     }
                 }
+
+                visualBoundingBox = new BoundingBox(
+                    new Vector3(xmin, ymin, zmin),
+                    new Vector3(xmax, ymax, zmax));
 
                 GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
                 buildingBlocks.CopyTo(primitivesArray);
@@ -158,7 +187,11 @@ namespace Voxelist.Mapping
         /// <param name="drawLocation"></param>
         public void Draw(Vector3 drawLocation, int textureIndex)
         {
-            if (Camera.ChunkIsCompletelyOffScreen(drawLocation))
+            BoundingBox box = new BoundingBox(
+                drawLocation + visualBoundingBox.Min,
+                drawLocation + visualBoundingBox.Max);
+
+            if (Camera.IsOffScreen(box))
                 return;
 
             if (!usesTextureIndex[textureIndex])

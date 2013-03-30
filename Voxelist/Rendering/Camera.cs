@@ -401,61 +401,6 @@ namespace Voxelist.Rendering
         #endregion Projection Matrix
 
         #region Drawing Assistance
-        private static float distanceFarAway = 60f;
-        private static float squareDistanceFarAway = distanceFarAway * distanceFarAway; //if the square distance from the center of the chunk to the camera center is greater than this, use "spaced out" chunk drawing
-
-        public static float DistanceFarAwayCutoff
-        {
-            get { return distanceFarAway; }
-
-            set
-            {
-                distanceFarAway = value;
-                squareDistanceFarAway = value * value;
-            }
-        }
-
-        private static float CUBE_DRAW_CUTOFF_DISTANCE = 120f;
-        private static float CUBE_DRAW_CUTOFF_SQUARE_DISTANCE = CUBE_DRAW_CUTOFF_DISTANCE * CUBE_DRAW_CUTOFF_DISTANCE;
-
-        public static float MaximumDrawDistance
-        {
-            get { return CUBE_DRAW_CUTOFF_DISTANCE; }
-
-            set
-            {
-                CUBE_DRAW_CUTOFF_DISTANCE = value;
-                CUBE_DRAW_CUTOFF_SQUARE_DISTANCE = value * value;
-            }
-        }
-
-        /// <summary>
-        /// Determines whether the chunk is completely offscreen; there may be
-        /// some false negatives (which hurt performance) but this is better
-        /// than false positives (which make whole chunks turn invisible for
-        /// no reason).
-        /// </summary>
-        /// <param name="drawLocation"></param>
-        /// <returns></returns>
-        public static bool ChunkIsCompletelyOffScreen(Vector3 drawLocation)
-        {
-            BoundingBox box = new BoundingBox(drawLocation, drawLocation + GameConstants.CHUNK_SIZE);
-
-            return !boundingFrustrum.Intersects(box);
-        }
-
-        public static bool ChunkIsFarAway(Vector3 chunkCornerLocation)
-        {
-            chunkCornerLocation.X += GameConstants.CHUNK_X_WIDTH >> 1;
-            chunkCornerLocation.Y += GameConstants.CHUNK_Y_HEIGHT >> 1;
-            chunkCornerLocation.Z += GameConstants.CHUNK_Z_LENGTH >> 1;
-
-            Vector3 effectiveChange = chunkCornerLocation - InChunkPosition;
-            effectiveChange.Y = 0;
-
-            return effectiveChange.LengthSquared() > squareDistanceFarAway;
-        }
-
         public static bool IsOffScreen(BoundingBox box)
         {
             return !boundingFrustrum.Intersects(box);

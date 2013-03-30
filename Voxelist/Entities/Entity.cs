@@ -136,6 +136,11 @@ namespace Voxelist.Entities
             private set;
         }
 
+        public virtual float GroundFrictionModifier
+        {
+            get { return 1; }
+        }
+
         protected Vector3 GroundFrictionVelocity_Experienced
         {
             get;
@@ -145,9 +150,14 @@ namespace Voxelist.Entities
         public abstract float Friction_Induced { get; }
         public virtual Vector3 FrictionVelocity_Induced { get { return Velocity; } }
 
-        protected float Airborne_Drag
+        protected float AirborneDrag
         {
             get { return .2f; }
+        }
+
+        public virtual float AirborneDrag_Modifier
+        {
+            get { return 1; }
         }
 
         protected void physicsUpdate(GameTime gametime)
@@ -163,7 +173,7 @@ namespace Voxelist.Entities
 
             Acceleration += GravityAcceleration;
 
-            Vector3 dragContribution = Airborne_Drag * (-Velocity);
+            Vector3 dragContribution = AirborneDrag * (-Velocity);
             Acceleration += dragContribution;
 
             if (OnGround)
@@ -171,7 +181,12 @@ namespace Voxelist.Entities
                 Vector3 frictionContribution = GroundIntendedVelocity;
                 frictionContribution += GroundFrictionVelocity_Experienced - Velocity;
 
-                Acceleration += GroundFrictionScale_Experienced * frictionContribution;
+                float frictionScale = GroundFrictionScale_Experienced * GroundFrictionModifier;
+
+                if (frictionScale * gametime.ElapsedGameTime.TotalSeconds >= .8)
+                    frictionScale = (float)(.8 / gametime.ElapsedGameTime.TotalSeconds);
+
+                Acceleration += frictionContribution * frictionScale;
             }
         }
 

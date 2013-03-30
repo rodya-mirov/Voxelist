@@ -16,6 +16,6 @@ namespace Voxelist.Utilities
         public static Vector3 CHUNK_SIZE { get { return new Vector3(CHUNK_X_WIDTH, CHUNK_Y_HEIGHT, CHUNK_Z_LENGTH); } }
         #endregion
 
-        public const float PHYSICS_COLLISION_EPSILON = 0.00001f; //on a collision, move back this amount to avoid staying *slightly* inside something
+        public static float PHYSICS_COLLISION_EPSILON = 0.00001f; //on a collision, move back this amount to avoid staying *slightly* inside something
     }
 }
