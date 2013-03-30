@@ -21,12 +21,10 @@ namespace Voxelist.Mapping
         protected BlockHandler handler;
         protected Block[, ,] containedCubes;
 
-        public Chunk(Map map, int chunkX, int chunkZ, BlockHandler handler)
+        public Chunk(BlockHandler handler)
         {
             this.handler = handler;
-
-            containedCubes = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
-            OverwriteBlockDataWith(map, chunkX, chunkZ);
+            containedCubes = new Block[GameConstants.CHUNK_X_WIDTH + 2, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH + 2];
         }
 
         public void OverwriteBlockDataWith(Map map, int chunkX, int chunkZ)
@@ -35,9 +33,16 @@ namespace Voxelist.Mapping
             setupDrawingAssistance();
         }
 
+        /// <summary>
+        /// Gets the block at the appropriate (local) cube coordinates.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
         public Block this[int x, int y, int z]
         {
-            get { return containedCubes[x, y, z]; }
+            get { return containedCubes[x + 1, y, z + 1]; }
         }
 
         #region Drawing assistance
@@ -62,7 +67,7 @@ namespace Voxelist.Mapping
                     {
                         for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
                         {
-                            Block relevantBlock = containedCubes[x, y, z];
+                            Block relevantBlock = this[x, y, z];
 
                             if (!handler.IsVisible(relevantBlock) || handler.TextureIndex(relevantBlock) != textureIndex)
                                 continue;
@@ -104,44 +109,36 @@ namespace Voxelist.Mapping
             out bool includeTopFace, out bool includeBottomFace,
             out bool includeLeftFace, out bool includeRightFace)
         {
-            if (x == 0)
-                includeLeftFace = true;
-            else if (handler.IsFullAndOpaqueToTheRight(containedCubes[x - 1, y, z]))
+            if (handler.IsFullAndOpaqueToTheRight(this[x - 1, y, z]))
                 includeLeftFace = false;
             else
                 includeLeftFace = true;
 
-            if (x + 1 == GameConstants.CHUNK_X_WIDTH)
-                includeRightFace = true;
-            else if (handler.IsFullAndOpaqueToTheLeft(containedCubes[x + 1, y, z]))
+            if (handler.IsFullAndOpaqueToTheLeft(this[x + 1, y, z]))
                 includeRightFace = false;
             else
                 includeRightFace = true;
 
             if (y == 0)
-                includeBottomFace = true;
-            else if (handler.IsFullAndOpaqueToTheTop(containedCubes[x, y - 1, z]))
+                includeBottomFace = false;
+            else if (handler.IsFullAndOpaqueToTheTop(this[x, y - 1, z]))
                 includeBottomFace = false;
             else
                 includeBottomFace = true;
 
             if (y + 1 == GameConstants.CHUNK_Y_HEIGHT)
                 includeTopFace = true;
-            else if (handler.IsFullAndOpaqueToTheBottom(containedCubes[x, y + 1, z]))
+            else if (handler.IsFullAndOpaqueToTheBottom(this[x, y + 1, z]))
                 includeTopFace = false;
             else
                 includeTopFace = true;
 
-            if (z == 0)
-                includeFrontFace = true;
-            else if (handler.IsFullAndOpaqueToTheBack(containedCubes[x, y, z - 1]))
+            if (handler.IsFullAndOpaqueToTheBack(this[x, y, z - 1]))
                 includeFrontFace = false;
             else
                 includeFrontFace = true;
 
-            if (z + 1 == GameConstants.CHUNK_Z_LENGTH)
-                includeBackFace = true;
-            else if (handler.IsFullAndOpaqueToTheFront(containedCubes[x, y, z + 1]))
+            if (handler.IsFullAndOpaqueToTheFront(this[x, y, z + 1]))
                 includeBackFace = false;
             else
                 includeBackFace = true;

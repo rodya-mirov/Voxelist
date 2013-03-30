@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using Voxelist.Rendering;
+using Voxelist.Utilities;
 
 namespace Voxelist
 {
@@ -45,6 +46,8 @@ namespace Voxelist
 
                 Mouse.SetPosition(desiredMouseX, desiredMouseY);
             }
+
+            RandomHelper.Initialize();
 
             Camera.Start();
 

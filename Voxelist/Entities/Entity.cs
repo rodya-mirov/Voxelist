@@ -187,7 +187,7 @@ namespace Voxelist.Entities
             MoveAndResolveCollisions(intendedChange);
         }
 
-        protected bool UseStep { get { return false; } }
+        protected bool UseStep { get { return true; } }
 
         /// <summary>
         /// Resolve collisions with other objects. That is, given a

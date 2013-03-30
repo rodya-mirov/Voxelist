@@ -22,14 +22,14 @@ namespace VoxelistDemo2
 
         protected override int CacheRadius
         {
-            get { return ChunkViewDistance + 2; }
+            get { return ChunkViewDistance; }
         }
 
         public override void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill)
         {
-            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
+            for (int x = -1; x <= GameConstants.CHUNK_X_WIDTH; x++)
             {
-                for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
+                for (int z = -1; z <= GameConstants.CHUNK_Z_LENGTH; z++)
                 {
                     int height = FindHeight(chunkX * GameConstants.CHUNK_X_WIDTH + x, chunkZ * GameConstants.CHUNK_Z_LENGTH + z);
 
@@ -44,12 +44,16 @@ namespace VoxelistDemo2
 
                     for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                     {
+                        Block block;
+
                         if (y < fullSquares)
-                            arrayToFill[x, y, z] = new Block(BlockHandlerExtension.GRANULARITY);
+                            block = new Block(BlockHandlerExtension.GRANULARITY);
                         else if (y == fullSquares)
-                            arrayToFill[x, y, z] = new Block(leftover);
+                            block = new Block(leftover);
                         else
-                            arrayToFill[x, y, z] = new Block(0);
+                            block = new Block(0);
+
+                        arrayToFill[x + 1, y, z + 1] = block;
                     }
                 }
             }

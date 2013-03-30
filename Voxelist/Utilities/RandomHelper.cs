@@ -2,12 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace Voxelist.Utilities
 {
     public static class RandomHelper
     {
-        public static int WORLD_SEED = 11609681;
+        public static readonly HashAlgorithm hasher = new SHA1CryptoServiceProvider();
+
+        public static void Initialize()
+        {
+            hasher.Initialize();
+        }
+
+        public static int WORLD_SEED = 11679681;
 
         public static int combineToSingleSeed(int x, int y, bool useWorldSeed)
         {

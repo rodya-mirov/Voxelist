@@ -17,22 +17,51 @@ namespace VoxelistDemo1
 
         protected override int ChunkViewDistance
         {
-            get { return 12; }
+            get { return 13; }
         }
 
         protected override int CacheRadius
         {
-            get { return ChunkViewDistance + 3; }
+            get { return ChunkViewDistance; }
         }
 
-        public override void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill)
+        public override void MakeChunkBlocks(int cx, int cz, Block[, ,] arrayToFill)
         {
-            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
+
+            for (int xIndex = -1; xIndex <= GameConstants.CHUNK_X_WIDTH; xIndex++)
             {
                 for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                 {
-                    for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
+                    for (int zIndex = -1; zIndex <= GameConstants.CHUNK_Z_LENGTH; zIndex++)
                     {
+                        int chunkX = cx;
+                        int chunkZ = cz;
+
+                        int x = xIndex;
+                        int z = zIndex;
+
+                        if (x == -1)
+                        {
+                            x += GameConstants.CHUNK_X_WIDTH;
+                            chunkX--;
+                        }
+                        else if (x == GameConstants.CHUNK_X_WIDTH)
+                        {
+                            x -= GameConstants.CHUNK_X_WIDTH;
+                            chunkX++;
+                        }
+
+                        if (z == -1)
+                        {
+                            z += GameConstants.CHUNK_Z_LENGTH;
+                            chunkZ--;
+                        }
+                        else if (z == GameConstants.CHUNK_Z_LENGTH)
+                        {
+                            z -= GameConstants.CHUNK_Z_LENGTH;
+                            chunkZ++;
+                        }
+
                         Block block;
 
                         //ground everywhere, and pyramid mountains
@@ -78,7 +107,7 @@ namespace VoxelistDemo1
                                 block = new Block(0);
                         }
 
-                        arrayToFill[x, y, z] = block;
+                        arrayToFill[xIndex+1, y, zIndex+1] = block;
                     }
                 }
             }
