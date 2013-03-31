@@ -198,6 +198,21 @@ namespace Voxelist.BlockHandling
         public abstract bool IsVisible(Block block);
 
         /// <summary>
+        /// The boundingbox which this square actually blocks
+        /// passage through.  This method is only used when IsVisible
+        /// is true.
+        /// 
+        /// Note: this boundingBox should assume the "lowest" corner
+        /// of the blockspace of interest is (0,0,0).  So a "full" block
+        /// would have boundingbox [(0, 0, 0), (1, 1, 1)],
+        /// while a "top half only" block would have bounding box
+        /// [(0, 0.5, 0), (1, 1, 1)]
+        /// </summary>
+        /// <param name="block"></param>
+        /// <returns></returns>
+        public abstract BoundingBox VisualBoundingBox(Block block);
+
+        /// <summary>
         /// The model for drawing this block.  Not required to
         /// be implemented when IsVisible is false.
         /// 

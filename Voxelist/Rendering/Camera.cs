@@ -184,13 +184,24 @@ namespace Voxelist.Rendering
         public static int ChunkZ { get { return Position.chunkZ; } }
 
         #region Rotation
-        private static Vector3 forward = Vector3.Forward;
-        private static Vector3 horizontalForward = Vector3.Forward;
+        private static Vector3 _forward = Vector3.Forward;
+
+        public static Vector3 Forward
+        {
+            get { return _forward; }
+            private set { _forward = value; }
+        }
+
+        private static Vector3 _horizontalForward = Vector3.Forward;
 
         public static Vector3 HorizontalForward
         {
-            get { return horizontalForward; }
+            get { return _horizontalForward; }
+            private set { _horizontalForward = value; }
         }
+
+        public static Ray ForwardRay { get { return new Ray(InChunkPosition, Forward); } }
+        public static Ray HorizontalForwardRay { get { return new Ray(InChunkPosition, HorizontalForward); } }
 
         private static Vector3 cameraUp = Vector3.Up;
 
@@ -239,10 +250,10 @@ namespace Voxelist.Rendering
         {
             desiredXRotation += radians;
 
-            while (desiredXRotation < -MathHelper.Pi)
-                desiredXRotation += MathHelper.TwoPi;
-            while (desiredXRotation > MathHelper.Pi)
-                desiredXRotation -= MathHelper.TwoPi;
+            if (desiredXRotation < -MathHelper.PiOver2)
+                desiredXRotation = -MathHelper.PiOver2;
+            while (desiredXRotation > MathHelper.PiOver2)
+                desiredXRotation = MathHelper.PiOver2;
         }
 
         /// <summary>
@@ -292,11 +303,11 @@ namespace Voxelist.Rendering
                 xRotation = MathHelper.PiOver2;
 
             horizontalRotationMatrix = Matrix.CreateRotationY(yRotation);
-            horizontalForward = Vector3.Transform(Vector3.Forward, horizontalRotationMatrix);
+            HorizontalForward = Vector3.Transform(Vector3.Forward, horizontalRotationMatrix);
 
             fullRotationMatrix = Matrix.CreateRotationX(xRotation) * horizontalRotationMatrix;
 
-            forward = Vector3.Transform(Vector3.Forward, fullRotationMatrix);
+            Forward = Vector3.Transform(Vector3.Forward, fullRotationMatrix);
             cameraUp = Vector3.Transform(Vector3.Up, fullRotationMatrix);
 
             fixMatrices();
@@ -313,7 +324,7 @@ namespace Voxelist.Rendering
 
         private static void fixViewMatrix()
         {
-            viewMatrix = Matrix.CreateLookAt(InChunkPosition, InChunkPosition + forward, cameraUp);
+            viewMatrix = Matrix.CreateLookAt(InChunkPosition, InChunkPosition + Forward, cameraUp);
             boundingFrustrum = new BoundingFrustum(viewMatrix * projectionMatrix);
         }
         #endregion View Matrix

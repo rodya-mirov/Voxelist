@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework;
 using Voxelist.BlockHandling;
 using Voxelist.GeometryPrimitives;
 
-namespace VoxelistDemo1
+namespace VoxelistDemo3
 {
     /// <summary>
     /// 0 is invisible
@@ -75,19 +75,6 @@ namespace VoxelistDemo1
             }
         }
 
-        public override BoundingBox VisualBoundingBox(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 1:
-                case 2:
-                    return new BoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         private static void setupDrawingEffects(Game game)
         {
             dirtEffect = new BasicEffect(game.GraphicsDevice);
@@ -128,6 +115,19 @@ namespace VoxelistDemo1
                     return true;
 
                 default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public override BoundingBox VisualBoundingBox(Block block)
+        {
+            switch (block.blockID)
+            {
+                case 1:
+                case 2:
+                    return new BoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

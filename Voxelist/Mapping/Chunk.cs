@@ -30,7 +30,7 @@ namespace Voxelist.Mapping
         public void OverwriteBlockDataWith(Map map, int chunkX, int chunkZ)
         {
             map.MakeChunkBlocks(chunkX, chunkZ, containedCubes);
-            setupDrawingAssistance();
+            RecalculateVisualGeometry();
         }
 
         /// <summary>
@@ -43,6 +43,8 @@ namespace Voxelist.Mapping
         public Block this[int x, int y, int z]
         {
             get { return containedCubes[x + 1, y, z + 1]; }
+
+            set { containedCubes[x + 1, y, z + 1] = value; }
         }
 
         #region Drawing assistance
@@ -52,7 +54,7 @@ namespace Voxelist.Mapping
 
         private BoundingBox visualBoundingBox;
 
-        private void setupDrawingAssistance()
+        public void RecalculateVisualGeometry()
         {
             combinedPrimitives = new GeometryPrimitive[handler.TotalNumberOfTextures];
             combinedVerticesCount = new int[handler.TotalNumberOfTextures];
@@ -110,7 +112,8 @@ namespace Voxelist.Mapping
                                 includeFrontFace, includeBackFace, includeTopFace, includeBottomFace,
                                 includeLeftFace, includeRightFace);
 
-                            buildingBlocks.Add(drawingPrimitive.Translate(new Vector3(x, y, z)));
+                            if (drawingPrimitive.Vertices.Length > 0)
+                                buildingBlocks.Add(drawingPrimitive.Translate(new Vector3(x, y, z)));
                         }
                     }
                 }
@@ -130,9 +133,6 @@ namespace Voxelist.Mapping
                     combinedVerticesCount[textureIndex] = combinedPrimitives[textureIndex].Vertices.Length;
                     combinedTrianglesCount[textureIndex] = combinedPrimitives[textureIndex].Indices.Length / 3;
                 }
-
-                if (combinedVerticesCount[textureIndex] == 0)
-                    usesTextureIndex[textureIndex] = false;
             }
         }
 

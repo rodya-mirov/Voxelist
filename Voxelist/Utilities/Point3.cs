@@ -105,5 +105,10 @@ namespace Voxelist.Utilities
         {
             return X ^ Y ^ Z;
         }
+
+        public int MaxNorm()
+        {
+            return Math.Max(Math.Max(Math.Abs(X), Math.Abs(Y)), Math.Abs(Z));
+        }
     }
 }

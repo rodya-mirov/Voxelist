@@ -51,7 +51,7 @@ namespace Voxelist.Mapping
         /// <param name="chunkZ"></param>
         /// <param name="arrayToFill">The array to fill with block data</param>
         /// <returns></returns>
-        public abstract void MakeChunkBlocks(int chunkX, int chunkZ, Block[,,] arrayToFill);
+        public abstract void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill);
 
         #region Physics
         /// <summary>
@@ -205,5 +205,248 @@ namespace Voxelist.Mapping
             }
         }
         #endregion
+
+        /// <summary>
+        /// This takes as input a maximum distance, then finds the first Block impacted
+        /// by the Camera's Forward Ray on this map, if any.  Return types are through
+        /// a large number of "out" parameters.  Note it will never return the
+        /// cell which contains the start of the Ray.
+        /// 
+        /// This is just a convenient default parameter set for the other BlockLookedAt
+        /// method.  The effect and output are the same as filling in the arguments with
+        /// information from Camera.
+        /// 
+        /// Note: if successful is FALSE, the returned data will be garbage (since it's
+        /// not easily nullable).  So be aware of that.
+        /// </summary>
+        /// <param name="maxDistance">The maximum distance along the ray that collisions
+        /// will be considered.  Uses the MAX-norm.</param>
+        /// <param name="requireVisible">Whether or not to skip invisible blocks.</param>
+        /// <param name="requireImpassable">Whether or not to skip passable blocks.</param>
+        /// <param name="foundBlock">The block that was actually found.</param>
+        /// <param name="chunkX">The chunk(X) position we end on.</param>
+        /// <param name="chunkZ">The chunk(Z) position we end on.</param>
+        /// <param name="blockPosition">The in-chunk (integer) position of the block that was found.</param>
+        /// <param name="faceTouched">The face that was first touched by the Ray.</param>
+        /// <param name="successful">Whether ot not anything was found</param>
+        public void BlockLookedAt(int maxDistance, bool requireVisible, bool requireImpassable,
+            out Block foundBlock, out int chunkX, out int chunkZ, out Point3 blockPosition,
+            out Face faceTouched, out bool successful)
+        {
+            chunkX = Camera.ChunkX;
+            chunkZ = Camera.ChunkZ;
+
+            BlockLookedAt(ref chunkX, ref chunkZ, Camera.ForwardRay, maxDistance,
+                requireVisible, requireImpassable,
+                out foundBlock, out blockPosition, out faceTouched,
+                out successful);
+        }
+
+        /// <summary>
+        /// This takes as input a position and a Ray and a maximum distance, then finds
+        /// the first Block impacted by the Ray on this map, if any.  Return types are
+        /// through a large number of "out" parameters.  Note it will never return the
+        /// cell which contains the start of the Ray.
+        /// 
+        /// Note: if successful is FALSE, the returned data will be garbage (since it's
+        /// not easily nullable).  So be aware of that.
+        /// </summary>
+        /// <param name="chunkX">The chunk(X) position to start the Ray from.  This will be
+        /// set to the chunk(X) position we end on.</param>
+        /// <param name="chunkZ">The chunk(Z) position to start the Ray from.  This will be
+        /// set to the chunk(Z) position we end on.</param>
+        /// <param name="lookRay">The Ray to look along.</param>
+        /// <param name="maxDistance">The maximum distance along the ray that collisions
+        /// will be considered.  Uses the MAX distance.</param>
+        /// <param name="requireVisible">Whether or not to skip invisible blocks.</param>
+        /// <param name="requireImpassable">Whether or not to skip passable blocks.</param>
+        /// <param name="foundBlock">The block that was actually found.</param>
+        /// <param name="blockPosition">The in-chunk (integer) position of the block that was found.</param>
+        /// <param name="faceTouched">The face that was first touched by the Ray.</param>
+        /// <param name="successful">Whether ot not anything was found</param>
+        public void BlockLookedAt(ref int chunkX, ref int chunkZ, Ray lookRay, int maxDistance,
+            bool requireVisible, bool requireImpassable,
+            out Block foundBlock, out Point3 blockPosition,
+            out Face faceTouched, out bool successful)
+        {
+            if (!requireVisible && !requireImpassable)
+                throw new ArgumentException("I have to have something to clip!  Must have either \"requireVisible\" or \"requireImpassable\" to be true!");
+
+            if (lookRay.Position.Y < 0 || lookRay.Position.Y >= GameConstants.CHUNK_Y_HEIGHT)
+                throw new ArgumentException("Can't cast rays from offscreen!");
+
+            successful = false;
+
+            blockPosition = Point3.RoundDown(lookRay.Position);
+            BoundingBox blockBounds = new BoundingBox(
+                new Vector3(blockPosition.X, blockPosition.Y, blockPosition.Z),
+                new Vector3(blockPosition.X + 1, blockPosition.Y + 1, blockPosition.Z + 1));
+
+            if (!blockBounds.Intersects(lookRay).HasValue)
+                throw new NotImplementedException();
+
+            int xChange = Numerical.sign(lookRay.Direction.X);
+            int yChange = Numerical.sign(lookRay.Direction.Y);
+            int zChange = Numerical.sign(lookRay.Direction.Z);
+
+            faceTouched = Face.FRONT;
+            foundBlock = new Block();
+
+            while (blockPosition.Y >= 0 && blockPosition.Y < GameConstants.CHUNK_Y_HEIGHT)
+            {
+                bool canMoveX = (xChange != 0);
+                bool canMoveY = (yChange != 0 && (blockPosition.Y + yChange >= 0 && blockPosition.Y + yChange < GameConstants.CHUNK_Y_HEIGHT));
+                bool canMoveZ = (zChange != 0);
+
+                bool hitX = false;
+                bool hitY = false;
+                bool hitZ = false;
+
+                BoundingBox oldBox = blockBounds;
+
+                int hits = 0;
+
+                #region Move and count hits...
+                if (canMoveX)
+                {
+                    BoundingBox box = new BoundingBox(oldBox.Min + new Vector3(xChange, 0, 0), oldBox.Max + new Vector3(xChange, 0, 0));
+
+                    float? result = box.Intersects(lookRay);
+                    hitX = result.HasValue;
+
+                    if (hitX)
+                    {
+                        hits++;
+
+                        blockPosition.X += xChange;
+                        faceTouched = (xChange < 0 ? Face.RIGHT : Face.LEFT);
+                        blockBounds = box;
+
+                        if (Math.Abs(blockPosition.X - lookRay.Position.X) > maxDistance) return;
+                    }
+                }
+
+                if (canMoveY)
+                {
+                    BoundingBox box = new BoundingBox(oldBox.Min + new Vector3(0, yChange, 0), oldBox.Max + new Vector3(0, yChange, 0));
+
+                    float? result = box.Intersects(lookRay);
+                    hitY = result.HasValue;
+
+                    if (hitY)
+                    {
+                        hits++;
+
+                        blockPosition.Y += yChange;
+                        faceTouched = (yChange < 0 ? Face.TOP : Face.BOTTOM);
+                        blockBounds = box;
+
+                        if (Math.Abs(blockPosition.Y - lookRay.Position.Y) > maxDistance) return;
+                    }
+                }
+
+                if (canMoveZ)
+                {
+                    BoundingBox box = new BoundingBox(oldBox.Min + new Vector3(0, 0, zChange), oldBox.Max + new Vector3(0, 0, zChange));
+
+                    float? result = box.Intersects(lookRay);
+                    hitZ = result.HasValue;
+
+                    if (hitZ)
+                    {
+                        hits++;
+
+                        blockPosition.Z += zChange;
+                        faceTouched = (zChange < 0 ? Face.BACK : Face.FRONT);
+                        blockBounds = box;
+
+                        if (Math.Abs(blockPosition.Z - lookRay.Position.Z) > maxDistance) return;
+                    }
+                }
+                #endregion
+
+                //We either hit a corner (yielding multiple matches) or ran off
+                //the edge of the world.  In either case, I'm OK with "no result."
+                if (hits != 1)
+                {
+                    return;
+                }
+
+                foundBlock = GetHighPriorityBlock(chunkX, chunkZ, blockPosition.X, blockPosition.Y, blockPosition.Z);
+
+                bool compatible = true;
+
+                if (requireVisible)
+                {
+                    if (BlockHandler.IsVisible(foundBlock))
+                    {
+                        BoundingBox visualBox = BlockHandler.VisualBoundingBox(foundBlock);
+                        visualBox = new BoundingBox(
+                            visualBox.Min + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z),
+                            visualBox.Max + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z));
+                        compatible = compatible && visualBox.Intersects(lookRay).HasValue;
+                    }
+                    else
+                    {
+                        compatible = false;
+                    }
+                }
+
+                if (true)
+                {
+                }
+
+                if (requireImpassable)
+                {
+                    if (BlockHandler.IsPassable(foundBlock))
+                    {
+                        compatible = false;
+                    }
+                    else
+                    {
+                        BoundingBox blockingBox = BlockHandler.PhysicalBlockingBox(foundBlock);
+                        blockingBox = new BoundingBox(
+                            blockingBox.Min + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z),
+                            blockingBox.Max + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z));
+                        compatible = compatible && blockingBox.Intersects(lookRay).HasValue;
+                    }
+                }
+
+                if (compatible)
+                {
+                    successful = true;
+
+                    #region Fix indexing...
+                    while (blockPosition.X < 0)
+                    {
+                        blockPosition.X += GameConstants.CHUNK_X_WIDTH;
+                        chunkX--;
+                    }
+
+                    while (blockPosition.X >= GameConstants.CHUNK_X_WIDTH)
+                    {
+                        blockPosition.X -= GameConstants.CHUNK_X_WIDTH;
+                        chunkX++;
+                    }
+
+                    while (blockPosition.Z < 0)
+                    {
+                        blockPosition.Z += GameConstants.CHUNK_Z_LENGTH;
+                        chunkZ--;
+                    }
+
+                    while (blockPosition.Z >= GameConstants.CHUNK_Z_LENGTH)
+                    {
+                        blockPosition.Z -= GameConstants.CHUNK_Z_LENGTH;
+                        chunkZ++;
+                    }
+                    #endregion
+
+                    return;
+                }
+            }
+        }
+
+        public enum Face { LEFT, RIGHT, TOP, BOTTOM, BACK, FRONT }
     }
 }

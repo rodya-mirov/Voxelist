@@ -132,6 +132,19 @@ namespace VoxelistDemo2
             return block.blockID != 0;
         }
 
+        public override BoundingBox VisualBoundingBox(Block block)
+        {
+            switch (block.blockID)
+            {
+                case 1:
+                case 2:
+                    return new BoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         #region Occlusion Flags
         public override bool IsFullAndOpaqueToTheTop(Block block)
         {
