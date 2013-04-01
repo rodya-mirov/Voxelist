@@ -75,19 +75,6 @@ namespace VoxelistDemo1
             }
         }
 
-        public override BoundingBox VisualBoundingBox(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 1:
-                case 2:
-                    return new BoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         private static void setupDrawingEffects(Game game)
         {
             dirtEffect = new BasicEffect(game.GraphicsDevice);
@@ -165,19 +152,6 @@ namespace VoxelistDemo1
             }
         }
 
-        public override BoundingBox PhysicalBlockingBox(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 1:
-                case 2:
-                    return new BoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         public override float Friction(Block block)
         {
             switch (block.blockID)
@@ -198,97 +172,5 @@ namespace VoxelistDemo1
             return Vector3.Zero;
         }
         #endregion Physics
-
-        #region Visual Occlusion Data
-        public override bool IsFullAndOpaqueToTheRight(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 0:
-                    return false;
-
-                case 1:
-                case 2:
-                    return true;
-
-                default: throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public override bool IsFullAndOpaqueToTheLeft(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 0:
-                    return false;
-
-                case 1:
-                case 2:
-                    return true;
-
-                default: throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public override bool IsFullAndOpaqueToTheFront(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 0:
-                    return false;
-
-                case 1:
-                case 2:
-                    return true;
-
-                default: throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public override bool IsFullAndOpaqueToTheBack(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 0:
-                    return false;
-
-                case 1:
-                case 2:
-                    return true;
-
-                default: throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public override bool IsFullAndOpaqueToTheTop(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 0:
-                    return false;
-
-                case 1:
-                case 2:
-                    return true;
-
-                default: throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public override bool IsFullAndOpaqueToTheBottom(Block block)
-        {
-            switch (block.blockID)
-            {
-                case 0:
-                    return false;
-
-                case 1:
-                case 2:
-                    return true;
-
-                default: throw new ArgumentOutOfRangeException();
-            }
-        }
-        #endregion
     }
 }

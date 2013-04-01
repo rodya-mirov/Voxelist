@@ -33,23 +33,12 @@ namespace VoxelistDemo2
                 {
                     int height = FindHeight(chunkX * GameConstants.CHUNK_X_WIDTH + x, chunkZ * GameConstants.CHUNK_Z_LENGTH + z);
 
-                    int fullSquares = Numerical.IntDivide(height, BlockHandlerExtension.GRANULARITY);
-                    int leftover = Numerical.IntMod(height, BlockHandlerExtension.GRANULARITY);
-
-                    if (fullSquares > GameConstants.CHUNK_Y_HEIGHT - 1)
-                        fullSquares = GameConstants.CHUNK_Y_HEIGHT - 1;
-
-                    if (fullSquares <= 0)
-                        throw new ArgumentException();
-
                     for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                     {
                         Block block;
 
-                        if (y < fullSquares)
-                            block = new Block(BlockHandlerExtension.GRANULARITY);
-                        else if (y == fullSquares)
-                            block = new Block(leftover);
+                        if (y <= height)
+                            block = new Block(1);
                         else
                             block = new Block(0);
 
@@ -61,7 +50,7 @@ namespace VoxelistDemo2
 
         private int FindHeight(int xCoordinate, int zCoordinate)
         {
-            return BlockHandlerExtension.GRANULARITY + ValueNoise(xCoordinate, zCoordinate, 8, BlockHandlerExtension.GRANULARITY / 4.0f);
+            return ValueNoise(xCoordinate, zCoordinate, 8, 0.25f);
         }
 
         private int ValueNoise(int x, int y, int numOctaves, double scale)

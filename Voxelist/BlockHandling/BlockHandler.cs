@@ -68,10 +68,17 @@ namespace Voxelist.BlockHandling
         /// This particular form is whether it blocks the
         /// view to the right; that is, whether the right
         /// face is completely opaque and fills the space.
+        /// 
+        /// Default behavior is to return IsVisible;
+        /// this need only be overridden if this block is
+        /// partially transparent.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsFullAndOpaqueToTheRight(Block block);
+        public virtual bool IsFullAndOpaqueToTheRight(Block block)
+        {
+            return IsVisible(block);
+        }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -83,10 +90,17 @@ namespace Voxelist.BlockHandling
         /// This particular form is whether it blocks the
         /// view to the left; that is, whether the left
         /// face is completely opaque and fills the space.
+        /// 
+        /// Default behavior is to return IsVisible;
+        /// this need only be overridden if this block is
+        /// partially transparent.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsFullAndOpaqueToTheLeft(Block block);
+        public virtual bool IsFullAndOpaqueToTheLeft(Block block)
+        {
+            return IsVisible(block);
+        }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -98,10 +112,17 @@ namespace Voxelist.BlockHandling
         /// This particular form is whether it blocks the
         /// view to the front; that is, whether the front
         /// face is completely opaque and fills the space.
+        /// 
+        /// Default behavior is to return IsVisible;
+        /// this need only be overridden if this block is
+        /// partially transparent.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsFullAndOpaqueToTheFront(Block block);
+        public virtual bool IsFullAndOpaqueToTheFront(Block block)
+        {
+            return IsVisible(block);
+        }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -113,10 +134,17 @@ namespace Voxelist.BlockHandling
         /// This particular form is whether it blocks the
         /// view to the back; that is, whether the back
         /// face is completely opaque and fills the space.
+        /// 
+        /// Default behavior is to return IsVisible;
+        /// this need only be overridden if this block is
+        /// partially transparent.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsFullAndOpaqueToTheBack(Block block);
+        public virtual bool IsFullAndOpaqueToTheBack(Block block)
+        {
+            return IsVisible(block);
+        }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -128,10 +156,17 @@ namespace Voxelist.BlockHandling
         /// This particular form is whether it blocks the
         /// view to the top; that is, whether the top
         /// face is completely opaque and fills the space.
+        /// 
+        /// Default behavior is to return IsVisible;
+        /// this need only be overridden if this block is
+        /// partially transparent.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsFullAndOpaqueToTheTop(Block block);
+        public virtual bool IsFullAndOpaqueToTheTop(Block block)
+        {
+            return IsVisible(block);
+        }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -143,10 +178,17 @@ namespace Voxelist.BlockHandling
         /// This particular form is whether it blocks the
         /// view to the bottom; that is, whether the bottom
         /// face is completely opaque and fills the space.
+        /// 
+        /// Default behavior is to return IsVisible;
+        /// this need only be overridden if this block is
+        /// partially transparent.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsFullAndOpaqueToTheBottom(Block block);
+        public virtual bool IsFullAndOpaqueToTheBottom(Block block)
+        {
+            return IsVisible(block);
+        }
         #endregion
 
         #region Physics Data
@@ -160,18 +202,15 @@ namespace Voxelist.BlockHandling
 
         /// <summary>
         /// The boundingbox which this square actually blocks
-        /// passage through.  This method is only used when IsPassable
+        /// passage through.  This method is only valid when IsPassable
         /// is false.
-        /// 
-        /// Note: this boundingBox should assume the "lowest" corner
-        /// of the blockspace of interest is (0,0,0).  So a "full" block
-        /// would have boundingbox [(0, 0, 0), (1, 1, 1)],
-        /// while a "top half only" block would have bounding box
-        /// [(0, 0.5, 0), (1, 1, 1)]
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract BoundingBox PhysicalBlockingBox(Block block);
+        public BoundingBox PhysicalBlockingBox(Block block)
+        {
+            return new BoundingBox(Vector3.Zero, Vector3.One);
+        }
 
         /// <summary>
         /// The amount of friction one achieves while moving along this block.
@@ -199,18 +238,15 @@ namespace Voxelist.BlockHandling
 
         /// <summary>
         /// The boundingbox which this square actually blocks
-        /// passage through.  This method is only used when IsVisible
+        /// passage through.  This method is only valid when IsVisible
         /// is true.
-        /// 
-        /// Note: this boundingBox should assume the "lowest" corner
-        /// of the blockspace of interest is (0,0,0).  So a "full" block
-        /// would have boundingbox [(0, 0, 0), (1, 1, 1)],
-        /// while a "top half only" block would have bounding box
-        /// [(0, 0.5, 0), (1, 1, 1)]
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract BoundingBox VisualBoundingBox(Block block);
+        public BoundingBox VisualBoundingBox(Block block)
+        {
+            return new BoundingBox(Vector3.Zero, Vector3.One);
+        }
 
         /// <summary>
         /// The model for drawing this block.  Not required to

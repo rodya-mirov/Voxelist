@@ -76,7 +76,13 @@ namespace Voxelist.Entities
         /// Note the "up-stepping" will only occur if the Entity is currently
         /// on the ground.
         /// </summary>
-        protected abstract float UpStepSize { get; }
+        protected virtual float UpStepSize { get { throw new NotImplementedException(); } }
+
+        /// <summary>
+        /// Whether or not to use the Step Up mechanic (this is a placeholder, and
+        /// looks pretty bad.  But it allows for smoother motion?)
+        /// </summary>
+        protected bool UseStep { get { return false; } }
 
         protected bool XCollidedLeft { get; set; }
         protected bool YCollidedDown { get; set; }
@@ -201,8 +207,6 @@ namespace Voxelist.Entities
 
             MoveAndResolveCollisions(intendedChange);
         }
-
-        protected bool UseStep { get { return true; } }
 
         /// <summary>
         /// Resolve collisions with other objects. That is, given a
