@@ -22,6 +22,8 @@ namespace Voxelist.Entities
 
             this.GroundFrictionScale_Experienced = 100f;
             this.GroundFrictionVelocity_Experienced = Vector3.Zero;
+
+            this.DragVelocityExperienced = Vector3.Zero;
         }
 
 
@@ -82,7 +84,22 @@ namespace Voxelist.Entities
         /// Whether or not to use the Step Up mechanic (this is a placeholder, and
         /// looks pretty bad.  But it allows for smoother motion?)
         /// </summary>
-        protected bool UseStep { get { return false; } }
+        protected virtual bool UseStep { get { return false; } }
+
+        /// <summary>
+        /// This indicates whether or not to keep experiencing "friction" when you're
+        /// in mid-air.  It's unrealistic, but in practice, if this is false, it's really
+        /// hard to jump onto things.  When this is true, you can move around in midair
+        /// as if you were in the ground (subject to the usual forces of course).
+        /// </summary>
+        protected virtual bool RetainFrictionInAir { get { return false; } }
+
+        /// <summary>
+        /// Whether or not to use your intended velocity in midair.  This is sort of a weak
+        /// form of "RetainFrictionInAir," and is probably enough to get you over walls,
+        /// without making jumping feel too "in control."
+        /// </summary>
+        protected virtual bool UseIntendedVelocityInMidAir { get { return true; } }
 
         protected bool XCollidedLeft { get; set; }
         protected bool YCollidedDown { get; set; }
@@ -166,6 +183,12 @@ namespace Voxelist.Entities
             get { return 1; }
         }
 
+        protected Vector3 DragVelocityExperienced
+        {
+            get;
+            private set;
+        }
+
         protected void physicsUpdate(GameTime gametime)
         {
             physicsUpdate_Position(gametime);
@@ -179,21 +202,33 @@ namespace Voxelist.Entities
 
             Acceleration += GravityAcceleration;
 
-            Vector3 dragContribution = AirborneDrag * (-Velocity);
-            Acceleration += dragContribution;
+            #region Drag (always occurs)
+            float dragScale = AirborneDrag * AirborneDrag_Modifier;
+            if (dragScale * gametime.ElapsedGameTime.TotalSeconds > .8)
+                dragScale = (float)(.8 / gametime.ElapsedGameTime.TotalSeconds);
 
-            if (OnGround)
+            Vector3 baseDragContribution = DragVelocityExperienced - Velocity;
+
+            if (UseIntendedVelocityInMidAir)
+                baseDragContribution += GroundIntendedVelocity;
+
+            Acceleration += baseDragContribution * dragScale;
+            #endregion
+
+            #region Friction (only occurs on ground, or with the special tag)
+            if (OnGround || RetainFrictionInAir)
             {
                 Vector3 frictionContribution = GroundIntendedVelocity;
                 frictionContribution += GroundFrictionVelocity_Experienced - Velocity;
 
                 float frictionScale = GroundFrictionScale_Experienced * GroundFrictionModifier;
 
-                if (frictionScale * gametime.ElapsedGameTime.TotalSeconds >= .8)
+                if (frictionScale * gametime.ElapsedGameTime.TotalSeconds > .8)
                     frictionScale = (float)(.8 / gametime.ElapsedGameTime.TotalSeconds);
 
                 Acceleration += frictionContribution * frictionScale;
             }
+            #endregion
         }
 
         private void physicsUpdate_Velocity(GameTime gametime)

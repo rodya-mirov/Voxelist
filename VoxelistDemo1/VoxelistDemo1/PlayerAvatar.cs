@@ -128,7 +128,7 @@ namespace VoxelistDemo1
 
             #endregion Walking
 
-            if (OnGround) //this is a good way to see if you're on the ground
+            if (OnGround)
             {
                 //now for jumping
                 if (ks.IsKeyDown(Keys.Space) && !spaceHeld)
