@@ -73,11 +73,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlockHandlerExtension.cs" />
+    <Compile Include="EntityBuilderExtension.cs" />
     <Compile Include="MapExtension.cs" />
     <Compile Include="PlayerAvatar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Game1.cs" />
+    <Compile Include="DemoGame3.cs" />
     <Compile Include="MouseOverBlock.cs" />
     <Compile Include="WorldManagerExtension.cs" />
   </ItemGroup>

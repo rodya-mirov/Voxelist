@@ -8,6 +8,7 @@ using Voxelist.BlockHandling;
 using Voxelist.GeometryPrimitives;
 using Voxelist.Utilities;
 using Voxelist.Rendering;
+using Voxelist.Entities;
 
 namespace Voxelist.Mapping
 {
@@ -20,16 +21,26 @@ namespace Voxelist.Mapping
     {
         protected BlockHandler handler;
         protected Block[, ,] containedCubes;
+        protected List<EntitySchema> entitySchemata;
+
+        public int chunkX { get; protected set; }
+        public int chunkZ { get; protected set; }
 
         public Chunk(BlockHandler handler)
         {
             this.handler = handler;
             containedCubes = new Block[GameConstants.CHUNK_X_WIDTH + 2, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH + 2];
+            entitySchemata = new List<EntitySchema>();
         }
 
-        public void OverwriteBlockDataWith(Map map, int chunkX, int chunkZ)
+        public void OverwriteChunkDataWith(Map map, int chunkX, int chunkZ)
         {
-            map.MakeChunkBlocks(chunkX, chunkZ, containedCubes);
+            this.chunkX = chunkX;
+            this.chunkZ = chunkZ;
+
+            entitySchemata.Clear();
+
+            map.MakeChunkData(chunkX, chunkZ, containedCubes, entitySchemata);
             RecalculateVisualGeometry();
         }
 
@@ -45,6 +56,12 @@ namespace Voxelist.Mapping
             get { return containedCubes[x + 1, y, z + 1]; }
 
             set { containedCubes[x + 1, y, z + 1] = value; }
+        }
+
+        public IEnumerable<Entity> MakeGeneratedEntities(EntityBuilder builder, WorldManager manager)
+        {
+            foreach (EntitySchema schema in entitySchemata)
+                yield return builder.MakeEntity(schema, chunkX, chunkZ, manager);
         }
 
         #region Drawing assistance

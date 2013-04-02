@@ -10,7 +10,7 @@ namespace VoxelistDemo2
         /// </summary>
         static void Main(string[] args)
         {
-            using (DemoGame game = new DemoGame())
+            using (DemoGame2 game = new DemoGame2())
             {
                 game.Run();
             }

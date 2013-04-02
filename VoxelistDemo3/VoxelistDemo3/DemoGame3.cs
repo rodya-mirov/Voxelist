@@ -12,21 +12,19 @@ using Voxelist;
 using Voxelist.Utilies;
 using Voxelist.Rendering;
 
-namespace VoxelistDemo2
+namespace VoxelistDemo3
 {
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class DemoGame : VoxelistGame
+    public class DemoGame3 : VoxelistGame
     {
+        private WorldManagerExtension worldManager;
+
         private SpriteBatch batch;
         private SpriteFont Font;
 
-        private WorldManagerExtension drawable;
-        private MapExtension map;
-        private BlockHandlerExtension handler;
-
-        public DemoGame()
+        public DemoGame3()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -40,11 +38,13 @@ namespace VoxelistDemo2
         /// </summary>
         protected override void Initialize()
         {
-            handler = new BlockHandlerExtension();
-            map = new MapExtension(handler);
+            BlockHandlerExtension handler = new BlockHandlerExtension();
+            EntityBuilderExtension builder = new EntityBuilderExtension();
 
-            drawable = new WorldManagerExtension(this, map, handler);
-            Components.Add(drawable);
+            MapExtension map = new MapExtension(handler);
+
+            worldManager = new WorldManagerExtension(this, map, handler, builder);
+            Components.Add(worldManager);
 
             Components.Add(new FPSComponent(this, "Fonts/Segoe"));
 
@@ -95,7 +95,7 @@ namespace VoxelistDemo2
                 this.Exit();
 
             if (ks.IsKeyDown(Keys.F12) && !wasHoldingF12)
-                ToggleFullScreen();
+                    ToggleFullScreen();
 
             wasHoldingF12 = ks.IsKeyDown(Keys.F12);
 
@@ -127,6 +127,7 @@ namespace VoxelistDemo2
         public void DrawDebugString()
         {
             String toDraw = Camera.HorizontalForward.ToString();
+            toDraw += "\n" + worldManager.Avatar.Position.ToString();
 
             int x = 40;
             int y = 60;
@@ -136,7 +137,7 @@ namespace VoxelistDemo2
             SamplerState sampler = GraphicsDevice.SamplerStates[0];
 
             batch.Begin();
-            batch.DrawString(Font, toDraw, new Vector2(x, y + 1), Color.Black);
+            batch.DrawString(Font, toDraw, new Vector2(x, y+1), Color.Black);
             batch.DrawString(Font, toDraw, new Vector2(x, y), Color.White);
             batch.End();
 

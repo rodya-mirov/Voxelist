@@ -22,4 +22,6 @@ namespace Voxelist.BlockHandling
             this.blockID = blockID;
         }
     }
+
+    public enum Face { LEFT, RIGHT, TOP, BOTTOM, BACK, FRONT }
 }

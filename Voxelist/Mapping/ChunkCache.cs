@@ -145,7 +145,7 @@ namespace Voxelist.Mapping
                     if (copyOver == null)
                         copyOver = new Chunk(map.BlockHandler);
 
-                    copyOver.OverwriteBlockDataWith(map, chunkXtoFind, chunkZtoFind);
+                    copyOver.OverwriteChunkDataWith(map, chunkXtoFind, chunkZtoFind);
 
                     //now stick it back in
                     lock (validBitsLock)
@@ -223,7 +223,7 @@ namespace Voxelist.Mapping
                         int zIndex = Numerical.IntMod(z - ChunkZMin + zStartIndex, Cache_Size);
 
                         cachedChunks[xIndex, zIndex] = new Chunk(map.BlockHandler);
-                        cachedChunks[xIndex, zIndex].OverwriteBlockDataWith(map, x, z);
+                        cachedChunks[xIndex, zIndex].OverwriteChunkDataWith(map, x, z);
                         cacheIsValid[xIndex, zIndex] = true;
                     }
                 }
@@ -398,7 +398,7 @@ namespace Voxelist.Mapping
                 if (cachedChunks[xIndex, zIndex] == null)
                     cachedChunks[xIndex, zIndex] = new Chunk(map.BlockHandler);
                 
-                cachedChunks[xIndex, zIndex].OverwriteBlockDataWith(map, chunkX, chunkZ);
+                cachedChunks[xIndex, zIndex].OverwriteChunkDataWith(map, chunkX, chunkZ);
             }
         }
     }

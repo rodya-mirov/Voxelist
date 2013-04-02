@@ -12,15 +12,17 @@ namespace VoxelistDemo3
 {
     public class WorldManagerExtension : WorldManager
     {
-        public WorldManagerExtension(Game game, MapExtension map, BlockHandlerExtension handler)
-            : base(game, map, handler)
+        private const string SkyboxTextureLocation = "Textures/Skyboxes/SkyboxGraphics";
+
+        public WorldManagerExtension(Game game, MapExtension map, BlockHandlerExtension handler, EntityBuilderExtension builder)
+            : base(game, map, handler, builder, SkyboxTextureLocation)
         {
         }
 
         public PlayerAvatar Avatar { get; private set; }
         public MouseOverBlock TestBlock { get; private set; }
 
-        public override IEnumerable<Entity> Entities()
+        protected override IEnumerable<Entity> ManualEntities()
         {
             yield return Avatar;
             yield return TestBlock;
@@ -36,9 +38,6 @@ namespace VoxelistDemo3
             Camera.StartFollowing(Avatar);
 
             TestBlock = new MouseOverBlock(new WorldPosition(0, 0, 0, 3, -2), this, Avatar);
-
-            Skybox = new Skybox();
-            Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxGraphics");
         }
 
         private bool leftMouseHeld = false;

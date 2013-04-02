@@ -10,20 +10,22 @@ namespace Voxelist.Rendering
 {
     public class Skybox
     {
-        public Skybox()
+        public Skybox(string textureLocation)
         {
+            this.TextureLocation = textureLocation;
         }
 
         private GeometryPrimitive box;
         private BasicEffect drawEffect;
+        private string TextureLocation;
 
-        public void LoadContent(Game game, String textureLocation, float distanceAway = 500.0f)
+        public void LoadContent(Game game, float distanceAway = 500.0f)
         {
             box = GeometryPrimitive.MakeSkybox(-distanceAway * Vector3.One, distanceAway * 2.0f * Vector3.One, Vector2.Zero, Vector2.One);
             drawEffect = new BasicEffect(game.GraphicsDevice);
 
             drawEffect.TextureEnabled = true;
-            drawEffect.Texture = game.Content.Load<Texture2D>(textureLocation);
+            drawEffect.Texture = game.Content.Load<Texture2D>(TextureLocation);
         }
 
         public void Draw()

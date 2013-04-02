@@ -19,11 +19,35 @@ namespace Voxelist.Mapping
             this.BlockHandler = handler;
 
             chunkCache = new ChunkCache(this, CacheRadius);
+
+            lastCenterX = CenterChunkX;
+            lastCenterZ = CenterChunkZ;
         }
 
         public void LoadContent(Game game)
         {
             chunkCache.StartCaching(0, 0, StartingChunkRadiusToLoad);
+
+            setupEntityGeneration();
+        }
+
+        private int lastCenterX, lastCenterZ;
+
+        public virtual void Update(GameTime gametime)
+        {
+            int dx = CenterChunkX - lastCenterX;
+            int dz = CenterChunkZ - lastCenterZ;
+
+            if (dx != 0 || dz != 0)
+                CenterChanged(dx, dz);
+
+            lastCenterX = CenterChunkX;
+            lastCenterZ = CenterChunkZ;
+        }
+
+        private void CenterChanged(int dx, int dz)
+        {
+            entitiesLoaded.AdjustRange(dx, dz);
         }
 
         public void Dispose()
@@ -49,9 +73,9 @@ namespace Voxelist.Mapping
         /// </summary>
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
-        /// <param name="arrayToFill">The array to fill with block data</param>
+        /// <param name="chunkBlocksToFill">The array to fill with block data</param>
         /// <returns></returns>
-        public abstract void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill);
+        public abstract void MakeChunkData(int chunkX, int chunkZ, Block[, ,] chunkBlocksToFill, List<EntitySchema> entityListToFill);
 
         #region Physics
         /// <summary>
@@ -74,24 +98,19 @@ namespace Voxelist.Mapping
                 cubeMax.Y = GameConstants.CHUNK_Y_HEIGHT - 1;
 
             //now hunt through all possible collisions
-            Vector3 translation = new Vector3(0, 0, 0);
             for (int x = cubeMin.X; x <= cubeMax.X; x++)
             {
-                translation.X = x;
                 for (int y = cubeMin.Y; y <= cubeMax.Y; y++)
                 {
-                    translation.Y = y;
                     for (int z = cubeMin.Z; z <= cubeMax.Z; z++)
                     {
-                        translation.Z = z;
-
                         Block block = GetHighPriorityBlock(chunkX, chunkZ, x, y, z);
                         if (BlockHandler.IsPassable(block))
                             continue;
 
                         yield return new Collider(
                             block,
-                            translation,
+                            new Vector3(x, y, z),
                             BlockHandler);
                     }
                 }
@@ -107,7 +126,7 @@ namespace Voxelist.Mapping
         /// <summary>
         /// Make sure this is higher than the ViewDistance!
         /// </summary>
-        protected abstract int CacheRadius { get; }
+        protected virtual int CacheRadius { get { return ChunkViewDistance + 1; } }
 
         /// <summary>
         /// Gets the Chunk located at the specified CHUNK coordinates.
@@ -184,6 +203,9 @@ namespace Voxelist.Mapping
 
         public void Draw()
         {
+            int centerChunkX = CenterChunkX;
+            int centerChunkZ = CenterChunkZ;
+
             Vector3 translation = Vector3.Zero;
 
             for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
@@ -196,7 +218,7 @@ namespace Voxelist.Mapping
                     {
                         translation.Z = chunkOffsetZ * GameConstants.CHUNK_Z_LENGTH;
 
-                        Chunk toDraw = GetChunk(chunkOffsetX + Camera.ChunkX, chunkOffsetZ + Camera.ChunkZ, false);
+                        Chunk toDraw = GetChunk(chunkOffsetX + centerChunkX, chunkOffsetZ + centerChunkZ, false);
 
                         if (toDraw != null)
                             toDraw.Draw(translation, textureIndex);
@@ -206,41 +228,58 @@ namespace Voxelist.Mapping
         }
         #endregion
 
-        /// <summary>
-        /// This takes as input a maximum distance, then finds the first Block impacted
-        /// by the Camera's Forward Ray on this map, if any.  Return types are through
-        /// a large number of "out" parameters.  Note it will never return the
-        /// cell which contains the start of the Ray.
-        /// 
-        /// This is just a convenient default parameter set for the other BlockLookedAt
-        /// method.  The effect and output are the same as filling in the arguments with
-        /// information from Camera.
-        /// 
-        /// Note: if successful is FALSE, the returned data will be garbage (since it's
-        /// not easily nullable).  So be aware of that.
-        /// </summary>
-        /// <param name="maxDistance">The maximum distance along the ray that collisions
-        /// will be considered.  Uses the MAX-norm.</param>
-        /// <param name="requireVisible">Whether or not to skip invisible blocks.</param>
-        /// <param name="requireImpassable">Whether or not to skip passable blocks.</param>
-        /// <param name="foundBlock">The block that was actually found.</param>
-        /// <param name="chunkX">The chunk(X) position we end on.</param>
-        /// <param name="chunkZ">The chunk(Z) position we end on.</param>
-        /// <param name="blockPosition">The in-chunk (integer) position of the block that was found.</param>
-        /// <param name="faceTouched">The face that was first touched by the Ray.</param>
-        /// <param name="successful">Whether ot not anything was found</param>
-        public void BlockLookedAt(int maxDistance, bool requireVisible, bool requireImpassable,
-            out Block foundBlock, out int chunkX, out int chunkZ, out Point3 blockPosition,
-            out Face faceTouched, out bool successful)
-        {
-            chunkX = Camera.ChunkX;
-            chunkZ = Camera.ChunkZ;
+        public int CenterChunkX { get { return Camera.ChunkX; } }
+        public int CenterChunkZ { get { return Camera.ChunkZ; } }
 
-            BlockLookedAt(ref chunkX, ref chunkZ, Camera.ForwardRay, maxDistance,
-                requireVisible, requireImpassable,
-                out foundBlock, out blockPosition, out faceTouched,
-                out successful);
+        #region Generated Entity Handling
+        private struct ChunkCoordinate
+        {
+            int X, Z;
+
+            public ChunkCoordinate(int x, int z)
+            {
+                this.X = x;
+                this.Z = z;
+            }
         }
+
+        private TorusBoolArray entitiesLoaded;
+
+        private void setupEntityGeneration()
+        {
+            entitiesLoaded = new TorusBoolArray(EntitySpawnRadius, CenterChunkX, CenterChunkZ, false);
+        }
+
+        public IEnumerable<Entity> GenerateAllAvailableEntities(EntityBuilder builder, WorldManager manager)
+        {
+            for (int dx = -EntitySpawnRadius; dx <= EntitySpawnRadius; dx++)
+            {
+                for (int dz = -EntitySpawnRadius; dz <= EntitySpawnRadius; dz++)
+                {
+                    int chunkX = CenterChunkX + dx;
+                    int chunkZ = CenterChunkZ + dz;
+
+                    if (entitiesLoaded[chunkX, chunkZ])
+                        continue;
+
+                    Chunk chunk = GetChunk(chunkX, chunkZ, false);
+                    if (chunk == null)
+                        continue;
+
+                    entitiesLoaded[chunkX, chunkZ] = true;
+
+                    if (chunk.chunkX != chunkX || chunk.chunkZ != chunkZ)
+                        throw new NotImplementedException();
+
+                    foreach (Entity entity in chunk.MakeGeneratedEntities(builder, manager))
+                        yield return entity;
+                }
+            }
+        }
+
+        public virtual int EntitySpawnRadius { get { return ChunkViewDistance; } }
+        public int EntityDespawnRadius { get { return EntitySpawnRadius + 1; } }
+        #endregion
 
         /// <summary>
         /// This takes as input a position and a Ray and a maximum distance, then finds
@@ -446,7 +485,5 @@ namespace Voxelist.Mapping
                 }
             }
         }
-
-        public enum Face { LEFT, RIGHT, TOP, BOTTOM, BACK, FRONT }
     }
 }

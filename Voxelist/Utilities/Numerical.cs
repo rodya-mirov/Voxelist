@@ -8,6 +8,13 @@ namespace Voxelist.Utilities
 {
     public static class Numerical
     {
+        public static void Swap<E>(ref E a, ref E b)
+        {
+            E temp = a;
+            a = b;
+            b = temp;
+        }
+
         /// <summary>
         /// Finds the "sign" of x; that is, 0 if x is 0,
         /// -1 if x is negative, or 1 if x is positive.

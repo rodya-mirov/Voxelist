@@ -108,11 +108,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlockHandlerExtension.cs" />
+    <Compile Include="EntityBuilderExtension.cs" />
     <Compile Include="PlayerAvatar.cs" />
     <Compile Include="MapExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="DemoGame.cs" />
+    <Compile Include="DemoGame2.cs" />
     <Compile Include="WorldManagerExtension.cs" />
   </ItemGroup>
   <ItemGroup>

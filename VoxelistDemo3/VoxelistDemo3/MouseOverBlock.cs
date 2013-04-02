@@ -98,10 +98,10 @@ namespace VoxelistDemo3
             int chunkX, chunkZ;
             Block lookAtBlock;
             Point3 blockPosition;
-            Map.Face faceTouched;
+            Face faceTouched;
             bool successful;
 
-            Map.BlockLookedAt(TestDistance, true, true, out lookAtBlock, out chunkX, out chunkZ, out blockPosition, out faceTouched, out successful);
+            WorldManager.BlockLookedAt(TestDistance, true, true, out lookAtBlock, out chunkX, out chunkZ, out blockPosition, out faceTouched, out successful);
 
             if (successful)
             {
@@ -118,34 +118,34 @@ namespace VoxelistDemo3
         public bool AlwaysOnTop { get; set; }
         public bool WantVisible { get; set; }
 
-        public void SetBlockPositionFor(int chunkX, int chunkZ, int blockX, int blockY, int blockZ, Map.Face facing)
+        public void SetBlockPositionFor(int chunkX, int chunkZ, int blockX, int blockY, int blockZ, Face facing)
         {
             if (AlwaysOnTop)
-                facing = Map.Face.TOP;
+                facing = Face.TOP;
 
             switch (facing)
             {
-                case Voxelist.Mapping.Map.Face.LEFT:
+                case Face.LEFT:
                     this.Position = new WorldPosition(chunkX, chunkZ, blockX - 1, blockY, blockZ);
                     break;
 
-                case Voxelist.Mapping.Map.Face.RIGHT:
+                case Face.RIGHT:
                     this.Position = new WorldPosition(chunkX, chunkZ, blockX + 1, blockY, blockZ);
                     break;
 
-                case Voxelist.Mapping.Map.Face.TOP:
+                case Face.TOP:
                     this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY + 1, blockZ);
                     break;
 
-                case Voxelist.Mapping.Map.Face.BOTTOM:
+                case Face.BOTTOM:
                     this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY - 1, blockZ);
                     break;
 
-                case Voxelist.Mapping.Map.Face.FRONT:
+                case Face.FRONT:
                     this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ + 1);
                     break;
 
-                case Voxelist.Mapping.Map.Face.BACK:
+                case Face.BACK:
                     this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ - 1);
                     break;
 

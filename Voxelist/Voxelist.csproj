@@ -95,7 +95,10 @@
     <Compile Include="BlockHandling\Block.cs" />
     <Compile Include="BlockHandling\BlockHandler.cs" />
     <Compile Include="Entities\Collider.cs" />
+    <Compile Include="Entities\EntityBuilder.cs" />
+    <Compile Include="Entities\EntitySchema.cs" />
     <Compile Include="Utilities\RandomHelper.cs" />
+    <Compile Include="Utilities\TorusBoolArray.cs" />
     <Compile Include="VoxelistGame.cs" />
     <Compile Include="Rendering\Camera.cs" />
     <Compile Include="Entities\Entity.cs" />

@@ -10,8 +10,10 @@ namespace VoxelistDemo2
 {
     public class WorldManagerExtension : WorldManager
     {
-        public WorldManagerExtension(DemoGame game, MapExtension map, BlockHandlerExtension handler)
-            : base(game, map, handler)
+        private const string SkyboxTextureLocation = "Textures/Skyboxes/SkyboxGraphics";
+
+        public WorldManagerExtension(DemoGame2 game, MapExtension map, BlockHandlerExtension handler, EntityBuilderExtension builder)
+            : base(game, map, handler, builder, SkyboxTextureLocation)
         {
         }
 
@@ -23,12 +25,9 @@ namespace VoxelistDemo2
 
             avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 70, 0), this);
             Camera.StartFollowing(avatar);
-
-            Skybox = new Skybox();
-            Skybox.LoadContent(Game, "Textures/Skyboxes/SkyboxGraphics");
         }
 
-        public override IEnumerable<Entity> Entities()
+        protected override IEnumerable<Entity> ManualEntities()
         {
             yield return avatar;
         }

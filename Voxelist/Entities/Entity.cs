@@ -13,7 +13,6 @@ namespace Voxelist.Entities
     public abstract class Entity
     {
         public WorldManager WorldManager { get; protected set; }
-        public Map Map { get { return WorldManager.Map; } }
 
         protected Entity(WorldPosition position, WorldManager manager)
         {
@@ -26,6 +25,23 @@ namespace Voxelist.Entities
             this.DragVelocityExperienced = Vector3.Zero;
         }
 
+        #region Auto-Spawning and -Despawning
+        public void AutoSpawn()
+        {
+        }
+
+        public void AutoDespawn()
+        {
+        }
+
+        public bool ShouldAutoDespawn()
+        {
+            int chunkX = Position.chunkX;
+            int chunkZ = Position.chunkZ;
+
+            return WorldManager.EntityFarAway(chunkX, chunkZ);
+        }
+        #endregion
 
         /// <summary>
         /// This represents a "position" for the Entity, including
@@ -365,7 +381,7 @@ namespace Voxelist.Entities
         {
             if (CollidesWithMapGeometry)
             {
-                foreach (Collider box in Map.IntersectingBlocks(Position.chunkX, Position.chunkZ, currentBoundingBox))
+                foreach (Collider box in WorldManager.IntersectingBlocks(Position.chunkX, Position.chunkZ, currentBoundingBox))
                     yield return box;
             }
 

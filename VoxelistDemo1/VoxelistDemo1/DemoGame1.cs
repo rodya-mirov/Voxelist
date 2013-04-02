@@ -12,19 +12,19 @@ using Voxelist;
 using Voxelist.Utilies;
 using Voxelist.Rendering;
 
-namespace VoxelistDemo3
+namespace VoxelistDemo1
 {
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : VoxelistGame
+    public class DemoGame1 : VoxelistGame
     {
-        private WorldManagerExtension drawable;
+        private WorldManagerExtension worldManager;
 
         private SpriteBatch batch;
         private SpriteFont Font;
 
-        public Game1()
+        public DemoGame1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -39,10 +39,12 @@ namespace VoxelistDemo3
         protected override void Initialize()
         {
             BlockHandlerExtension handler = new BlockHandlerExtension();
+            EntityBuilderExtension builder = new EntityBuilderExtension();
+
             MapExtension map = new MapExtension(handler);
 
-            drawable = new WorldManagerExtension(this, map, handler);
-            Components.Add(drawable);
+            worldManager = new WorldManagerExtension(this, map, handler, builder);
+            Components.Add(worldManager);
 
             Components.Add(new FPSComponent(this, "Fonts/Segoe"));
 
@@ -56,6 +58,8 @@ namespace VoxelistDemo3
         protected override void LoadContent()
         {
             base.LoadContent();
+
+            ScootBlock.LoadContent(this);
 
             batch = new SpriteBatch(GraphicsDevice);
             Font = Content.Load<SpriteFont>("Fonts/Segoe");
@@ -125,7 +129,7 @@ namespace VoxelistDemo3
         public void DrawDebugString()
         {
             String toDraw = Camera.HorizontalForward.ToString();
-            toDraw += "\n" + drawable.Avatar.Position.ToString();
+            toDraw += "\n" + worldManager.Avatar.Position.ToString();
 
             int x = 40;
             int y = 60;

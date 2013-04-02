@@ -5,6 +5,7 @@ using System.Text;
 using Voxelist.Mapping;
 using Voxelist.BlockHandling;
 using Voxelist.Utilities;
+using Voxelist.Entities;
 
 namespace VoxelistDemo2
 {
@@ -25,7 +26,7 @@ namespace VoxelistDemo2
             get { return ChunkViewDistance; }
         }
 
-        public override void MakeChunkBlocks(int chunkX, int chunkZ, Block[, ,] arrayToFill)
+        public override void MakeChunkData(int chunkX, int chunkZ, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
         {
             for (int x = -1; x <= GameConstants.CHUNK_X_WIDTH; x++)
             {
