@@ -57,6 +57,19 @@ namespace VoxelistDemo3
             get { throw new NotImplementedException(); }
         }
 
+        public override BoundingBox VisualBoundingBox
+        {
+            get
+            {
+                Vector3 min = Vector3.One * buffer;
+                Vector3 max = Vector3.One * (buffer + size);
+
+                return new BoundingBox(
+                    min + Position.InChunkPosition,
+                    max + Position.InChunkPosition);
+            }
+        }
+
         public override float Friction_Induced
         {
             get { throw new NotImplementedException(); }
@@ -115,6 +128,7 @@ namespace VoxelistDemo3
         }
 
         public bool Visible { get; private set; }
+        public override bool IsVisible { get { return Visible; } }
         public bool AlwaysOnTop { get; set; }
         public bool WantVisible { get; set; }
 

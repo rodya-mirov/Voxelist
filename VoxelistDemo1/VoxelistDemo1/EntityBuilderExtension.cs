@@ -19,17 +19,26 @@ namespace VoxelistDemo1
         public override void LoadContent(Game game)
         {
             base.LoadContent(game);
+
+            ScootBlock.LoadContent(game);
+            SceneryEntity.LoadContent(game);
         }
 
         public override Entity MakeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
         {
-            if (schema.TypeID != 0)
-                throw new NotImplementedException();
-
             WorldPosition position = new WorldPosition(
                 chunkX, chunkZ, schema.inChunkX, schema.inChunkY, schema.inChunkZ);
 
-            return new ScootBlock(position, manager);
+            switch (schema.TypeID)
+            {
+                case 0:
+                    return new ScootBlock(position, manager);
+
+                case 1:
+                    return new SceneryEntity(position, manager);
+
+                default: throw new NotImplementedException();
+            }
         }
     }
 }

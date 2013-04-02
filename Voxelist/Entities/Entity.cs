@@ -94,7 +94,7 @@ namespace Voxelist.Entities
         /// Note the "up-stepping" will only occur if the Entity is currently
         /// on the ground.
         /// </summary>
-        protected virtual float UpStepSize { get { throw new NotImplementedException(); } }
+        protected virtual float UpStepSize { get { return 0; } }
 
         /// <summary>
         /// Whether or not to use the Step Up mechanic (this is a placeholder, and
@@ -132,11 +132,20 @@ namespace Voxelist.Entities
         public virtual bool CollidesWithMapGeometry { get { return true; } }
 
         /// <summary>
+        /// Whether or not this Entity has PHYSICS interactions with any other Entity.
+        /// This is a voluntary flag and defaults to true, but setting this to false
+        /// (when appropriate) will dramatically improve performance.
+        /// </summary>
+        public virtual bool HasPhysicsInteractions { get { return true; } }
+
+        /// <summary>
         /// Whether or not this object acts as a wall for the given other object
         /// (that is, if other tries to run through this, is it stopped?)
         /// 
         /// Default is:
-        ///     other.CollidesWithMapGeometry && other != this;
+        ///     other.CollidesWithMapGeometry
+        ///        && other.HasPhysicsInteractions
+        ///        && other != this
         ///     
         /// Try to maintain the following:
         ///     ! this.IsAWallFor(this)
@@ -146,7 +155,7 @@ namespace Voxelist.Entities
         /// <returns></returns>
         public virtual bool IsAWallFor(Entity other)
         {
-            return other.CollidesWithMapGeometry && other != this;
+            return other.CollidesWithMapGeometry && other.HasPhysicsInteractions && other != this;
         }
 
         protected Vector3 Acceleration { get; set; }
@@ -287,6 +296,7 @@ namespace Voxelist.Entities
             float upstep = UpStepSize;
             bool upStepHitCeiling = false;
 
+
             float relevantFriction;
             Vector3 frictionVelocity;
 
@@ -385,10 +395,16 @@ namespace Voxelist.Entities
                     yield return box;
             }
 
-            foreach (Entity other in WorldManager.Entities())
+            if (HasPhysicsInteractions)
             {
-                if (other.IsAWallFor(this))
-                    yield return new Collider(other, Position.chunkX, Position.chunkZ);
+                foreach (Entity other in WorldManager.InteractiveEntities())
+                {
+                    if (other.IsAWallFor(this))
+                        yield return new Collider(other, Position.chunkX, Position.chunkZ);
+                    else if (other != this)
+                        throw new NotImplementedException();
+
+                }
             }
         }
 
@@ -514,6 +530,33 @@ namespace Voxelist.Entities
 
         #endregion
 
+        #region Drawing
+        public abstract bool IsVisible { get; }
+
+        /// <summary>
+        /// Only called if IsVisible is true.
+        /// </summary>
+        public abstract BoundingBox VisualBoundingBox { get; }
+
+        public bool ShouldBeDrawn()
+        {
+            if (!IsVisible)
+                return false;
+
+            BoundingBox visualBoundingBox = VisualBoundingBox;
+            Vector3 translation = new Vector3(
+                GameConstants.CHUNK_X_WIDTH * (Camera.ChunkX - Position.chunkX),
+                0,
+                GameConstants.CHUNK_Z_LENGTH * (Camera.ChunkZ - Position.chunkZ));
+
+            visualBoundingBox = new BoundingBox(
+                visualBoundingBox.Min - translation,
+                visualBoundingBox.Max - translation);
+
+            return !Camera.IsOffScreen(visualBoundingBox);
+        }
+
         public abstract void Draw(GameTime gametime);
+        #endregion
     }
 }

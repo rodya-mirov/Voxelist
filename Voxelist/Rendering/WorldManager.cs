@@ -29,11 +29,24 @@ namespace Voxelist.Rendering
             this.Skybox = new Skybox(SkyboxTextureLocation);
         }
 
-        private Queue<Entity> generatedEntities = new Queue<Entity>();
+        private Queue<Entity> generatedInteractiveEntities = new Queue<Entity>();
+        private Queue<Entity> generatedNonInteractiveEntities = new Queue<Entity>();
 
         public IEnumerable<Entity> Entities()
         {
-            foreach (Entity entity in generatedEntities)
+            foreach (Entity entity in generatedInteractiveEntities)
+                yield return entity;
+
+            foreach (Entity entity in generatedNonInteractiveEntities)
+                yield return entity;
+
+            foreach (Entity entity in ManualEntities())
+                yield return entity;
+        }
+
+        public IEnumerable<Entity> InteractiveEntities()
+        {
+            foreach (Entity entity in generatedInteractiveEntities)
                 yield return entity;
 
             foreach (Entity entity in ManualEntities())
@@ -78,9 +91,27 @@ namespace Voxelist.Rendering
 
         private void ManageGeneratedEntities(GameTime gameTime)
         {
+            updateGeneratedEntityQueue(gameTime, ref generatedInteractiveEntities);
+            updateGeneratedEntityQueue(gameTime, ref generatedNonInteractiveEntities);
+
+            //add new managed entities
+            foreach (Entity entity in Map.GenerateAllAvailableEntities(EntityBuilder, this))
+            {
+                int cx = entity.Position.chunkX;
+                int cz = entity.Position.chunkZ;
+
+                if (entity.HasPhysicsInteractions)
+                    generatedInteractiveEntities.Enqueue(entity);
+                else
+                    generatedNonInteractiveEntities.Enqueue(entity);
+            }
+        }
+
+        private void updateGeneratedEntityQueue(GameTime gameTime, ref Queue<Entity> toUpdate)
+        {
             backupEntityQueue.Clear();
 
-            foreach (Entity entity in generatedEntities)
+            foreach (Entity entity in toUpdate)
             {
                 if (entity.ShouldAutoDespawn())
                 {
@@ -97,16 +128,7 @@ namespace Voxelist.Rendering
                 }
             }
 
-            Numerical.Swap(ref generatedEntities, ref backupEntityQueue);
-
-            //add new managed entities
-            foreach (Entity entity in Map.GenerateAllAvailableEntities(EntityBuilder, this))
-            {
-                int cx = entity.Position.chunkX;
-                int cz = entity.Position.chunkZ;
-
-                generatedEntities.Enqueue(entity);
-            }
+            Numerical.Swap(ref toUpdate, ref backupEntityQueue);
         }
 
         protected override void Dispose(bool disposing)
@@ -126,7 +148,10 @@ namespace Voxelist.Rendering
             Map.Draw();
 
             foreach (Entity entity in Entities())
-                entity.Draw(gameTime);
+            {
+                if (entity.ShouldBeDrawn())
+                    entity.Draw(gameTime);
+            }
 
             if (Skybox != null)
                 Skybox.Draw();

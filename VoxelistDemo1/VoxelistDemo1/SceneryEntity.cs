@@ -2,21 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Voxelist.Entities;
 using Voxelist.Mapping;
-using Voxelist.Rendering;
 using Voxelist.GeometryPrimitives;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Voxelist.Rendering;
 
 namespace VoxelistDemo1
 {
-    public class ScootBlock : Entity
+    public class SceneryEntity : Entity
     {
-        public ScootBlock(WorldPosition position, WorldManager manager)
-            : base(position, manager)
+        public SceneryEntity(WorldPosition pos, WorldManager manager)
+            : base(pos, manager)
         {
-            intendedVelocity = new Vector3(1.5f, 0, 0);
         }
 
         private static GeometryPrimitive entityPrimitive;
@@ -42,8 +41,30 @@ namespace VoxelistDemo1
             drawingEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
 
             //Turns them blackish and shiny, makes em stand out
-            drawingEffect.DiffuseColor = Color.BlueViolet.ToVector3();
+            drawingEffect.DiffuseColor = Color.AntiqueWhite.ToVector3();
             drawingEffect.EnableDefaultLighting();
+        }
+
+        protected override Vector3 GroundIntendedVelocity
+        {
+            get { return Vector3.Zero; }
+        }
+
+        public override float Friction_Induced
+        {
+            get { return 50; } //whatever
+        }
+
+        //collides with walls, but ...
+        public override bool CollidesWithMapGeometry
+        {
+            get { return true; }
+        }
+
+        //...not with other Entities
+        public override bool HasPhysicsInteractions
+        {
+            get { return false; }
         }
 
         public override BoundingBox BoundingBox
@@ -64,22 +85,6 @@ namespace VoxelistDemo1
         public override bool IsVisible
         {
             get { return true; }
-        }
-
-        public override float Friction_Induced
-        {
-            get { return 20; }
-        }
-
-        private Vector3 intendedVelocity;
-        protected override Vector3 GroundIntendedVelocity
-        {
-            get { return intendedVelocity; }
-        }
-
-        protected override float UpStepSize
-        {
-            get { return 0.3f; }
         }
 
         public override void Update(GameTime gametime)

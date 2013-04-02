@@ -59,8 +59,6 @@ namespace VoxelistDemo1
         {
             base.LoadContent();
 
-            ScootBlock.LoadContent(this);
-
             batch = new SpriteBatch(GraphicsDevice);
             Font = Content.Load<SpriteFont>("Fonts/Segoe");
 

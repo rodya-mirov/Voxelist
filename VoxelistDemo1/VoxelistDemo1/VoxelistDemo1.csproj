@@ -115,6 +115,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="DemoGame1.cs" />
+    <Compile Include="SceneryEntity.cs" />
     <Compile Include="WorldManagerExtension.cs" />
   </ItemGroup>
   <ItemGroup>

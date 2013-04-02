@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Voxelist.Rendering;
 using Voxelist.Entities;
 using Voxelist.Mapping;
+using Microsoft.Xna.Framework.Input;
 
 namespace VoxelistDemo1
 {
@@ -31,6 +32,24 @@ namespace VoxelistDemo1
 
             Avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 3, 0), this);
             Camera.StartFollowing(Avatar);
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+
+            KeyboardState ks = Keyboard.GetState();
+
+            if (ks.IsKeyDown(Keys.P))
+            {
+                int count = 0;
+                foreach (Entity e in Entities())
+                    count++;
+
+                if (true)
+                {
+                }
+            }
         }
     }
 }

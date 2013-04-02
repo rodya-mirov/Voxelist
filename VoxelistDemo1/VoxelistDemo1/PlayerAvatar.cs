@@ -24,6 +24,16 @@ namespace VoxelistDemo1
             get { return new BoundingBox(Position.InChunkPosition - Size / 2f, Position.InChunkPosition + Size / 2f); }
         }
 
+        public override BoundingBox VisualBoundingBox
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool IsVisible
+        {
+            get { return false; }
+        }
+
         public override WorldPosition CameraFollowPosition
         {
             get { return Position + Vector3.Up * 0.7f; }
@@ -147,7 +157,7 @@ namespace VoxelistDemo1
 
         public override void Draw(GameTime gametime)
         {
-            //invisible
+            throw new NotImplementedException();
         }
 
         protected override float UpStepSize

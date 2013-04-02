@@ -24,6 +24,16 @@ namespace VoxelistDemo2
             get { return new BoundingBox(Position.InChunkPosition - Size / 2f, Position.InChunkPosition + Size / 2f); }
         }
 
+        public override BoundingBox VisualBoundingBox
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override bool IsVisible
+        {
+            get { return false; }
+        }
+
         public override WorldPosition CameraFollowPosition
         {
             get { return Position + Vector3.Up * 0.7f; }
