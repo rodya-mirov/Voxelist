@@ -21,11 +21,6 @@ namespace VoxelistDemo3
             get { return 13; }
         }
 
-        protected override int CacheRadius
-        {
-            get { return ChunkViewDistance; }
-        }
-
         public override void MakeChunkData(int cx, int cz, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
         {
 

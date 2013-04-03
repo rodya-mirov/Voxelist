@@ -90,5 +90,35 @@ namespace Voxelist.Utilities
 
             return (r * y > x) ? r - 1 : r;
         }
+
+        /// <summary>
+        /// Makes a minimal bounding box which contains both the given box and its
+        /// translate by the given vector.
+        /// </summary>
+        /// <param name="BoundingBox"></param>
+        /// <param name="intendedChange"></param>
+        /// <returns></returns>
+        public static BoundingBox StretchBox(BoundingBox BoundingBox, Vector3 intendedChange)
+        {
+            Vector3 min = BoundingBox.Min;
+            Vector3 max = BoundingBox.Max;
+
+            if (intendedChange.X < 0)
+                min.X += intendedChange.X;
+            else
+                max.X += intendedChange.X;
+
+            if (intendedChange.Y < 0)
+                min.Y += intendedChange.Y;
+            else
+                max.Y += intendedChange.Y;
+
+            if (intendedChange.Z < 0)
+                min.Z += intendedChange.Z;
+            else
+                max.Z += intendedChange.Z;
+
+            return new BoundingBox(min, max);
+        }
     }
 }

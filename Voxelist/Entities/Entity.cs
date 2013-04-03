@@ -94,7 +94,7 @@ namespace Voxelist.Entities
         /// Note the "up-stepping" will only occur if the Entity is currently
         /// on the ground.
         /// </summary>
-        protected virtual float UpStepSize { get { return 0; } }
+        protected virtual float UpStepSize { get { throw new NotImplementedException(); } }
 
         /// <summary>
         /// Whether or not to use the Step Up mechanic (this is a placeholder, and
@@ -268,6 +268,9 @@ namespace Voxelist.Entities
             MoveAndResolveCollisions(intendedChange);
         }
 
+        #region Collision Resolution
+        private Queue<Collider> possibleEntityCollisions = new Queue<Collider>();
+
         /// <summary>
         /// Resolve collisions with other objects. That is, given a
         /// change vector (intendedChange), reduce this vector as needed
@@ -288,14 +291,15 @@ namespace Voxelist.Entities
         /// <returns></returns>
         private void MoveAndResolveCollisions(Vector3 intendedChange)
         {
+            loadPossibleEntityCollisions(intendedChange);
+
             bool StartedOnGround = OnGround;
 
             Vector3 originalIntendedChange = intendedChange;
             Vector3 pv = Velocity;
 
-            float upstep = UpStepSize;
+            float upstep = UseStep ? UpStepSize : 0;
             bool upStepHitCeiling = false;
-
 
             float relevantFriction;
             Vector3 frictionVelocity;
@@ -377,6 +381,23 @@ namespace Voxelist.Entities
             Velocity = pv;
         }
 
+        private void loadPossibleEntityCollisions(Vector3 intendedChange)
+        {
+            possibleEntityCollisions.Clear();
+
+            BoundingBox bigBox = Numerical.StretchBox(BoundingBox, intendedChange);
+
+            if (HasPhysicsInteractions)
+            {
+                foreach (Entity other in WorldManager.InteractiveEntities())
+                {
+                    if (other.IsAWallFor(this))
+                        possibleEntityCollisions.Enqueue(new Collider(other, Position.chunkX, Position.chunkZ));
+
+                }
+            }
+        }
+
         private void ResetCollisionTrackers()
         {
             XCollidedLeft = false;
@@ -395,17 +416,8 @@ namespace Voxelist.Entities
                     yield return box;
             }
 
-            if (HasPhysicsInteractions)
-            {
-                foreach (Entity other in WorldManager.InteractiveEntities())
-                {
-                    if (other.IsAWallFor(this))
-                        yield return new Collider(other, Position.chunkX, Position.chunkZ);
-                    else if (other != this)
-                        throw new NotImplementedException();
-
-                }
-            }
+            foreach (Collider collider in possibleEntityCollisions)
+                yield return collider;
         }
 
         /// <summary>
@@ -527,6 +539,7 @@ namespace Voxelist.Entities
 
             return relevantChange;
         }
+        #endregion
 
         #endregion
 

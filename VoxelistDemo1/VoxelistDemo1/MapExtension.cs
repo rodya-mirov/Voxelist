@@ -26,11 +26,6 @@ namespace VoxelistDemo1
             get { return 4; }
         }
 
-        protected override int CacheRadius
-        {
-            get { return ChunkViewDistance; }
-        }
-
         public override void MakeChunkData(int chunkX, int chunkZ, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
         {
             addEntityData(entityDataToFill);
@@ -126,8 +121,11 @@ namespace VoxelistDemo1
 
         private static void addEntityData(List<EntitySchema> entityDataToFill)
         {
+            //one scootblock per chunk
             entityDataToFill.Add(new EntitySchema(0, 4, 4, 4));
 
+            //4 scenery blocks per chunk
+            /*
             int inc = 8;
             for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x += inc)
             {
@@ -135,7 +133,7 @@ namespace VoxelistDemo1
                 {
                     entityDataToFill.Add(new EntitySchema(1, x, 100, z));
                 }
-            }
+            }//*/
         }
     }
 }

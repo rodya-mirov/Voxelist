@@ -126,7 +126,7 @@ namespace Voxelist.Mapping
         /// <summary>
         /// Make sure this is higher than the ViewDistance!
         /// </summary>
-        protected virtual int CacheRadius { get { return ChunkViewDistance + 1; } }
+        private int CacheRadius { get { return ChunkViewDistance + 1; } }
 
         /// <summary>
         /// Gets the Chunk located at the specified CHUNK coordinates.
