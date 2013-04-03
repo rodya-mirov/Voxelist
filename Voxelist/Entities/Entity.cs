@@ -85,24 +85,6 @@ namespace Voxelist.Entities
         public abstract BoundingBox BoundingBox { get; }
 
         /// <summary>
-        /// This is the amount of regular physical obstacles which the
-        /// Entity will naturally step over without need for other upward
-        /// forces.  0 will appear to be sliding, and will get stuck on any
-        /// obstacle; the "right" step size should depend on the size and
-        /// nature of the Entity.
-        /// 
-        /// Note the "up-stepping" will only occur if the Entity is currently
-        /// on the ground.
-        /// </summary>
-        protected virtual float UpStepSize { get { throw new NotImplementedException(); } }
-
-        /// <summary>
-        /// Whether or not to use the Step Up mechanic (this is a placeholder, and
-        /// looks pretty bad.  But it allows for smoother motion?)
-        /// </summary>
-        protected virtual bool UseStep { get { return false; } }
-
-        /// <summary>
         /// This indicates whether or not to keep experiencing "friction" when you're
         /// in mid-air.  It's unrealistic, but in practice, if this is false, it's really
         /// hard to jump onto things.  When this is true, you can move around in midair
@@ -298,21 +280,10 @@ namespace Voxelist.Entities
             Vector3 originalIntendedChange = intendedChange;
             Vector3 pv = Velocity;
 
-            float upstep = UseStep ? UpStepSize : 0;
-            bool upStepHitCeiling = false;
-
             float relevantFriction;
             Vector3 frictionVelocity;
 
             ResetCollisionTrackers();
-
-            //first step up
-            if (UseStep && StartedOnGround)
-            {
-                upstep = DetectAndFixCollisions(BoundingBox, upstep, ref upStepHitCeiling, Dimension.Y,
-                    out relevantFriction, out frictionVelocity);
-                Position += new Vector3(0, upstep, 0);
-            }
 
             //now resolve lateral movement (x)
             bool collidedX = false;
@@ -345,17 +316,6 @@ namespace Voxelist.Entities
             }
 
             Position += new Vector3(0, 0, intendedChange.Z);
-
-            float downstep = -upstep;
-            bool downStepHitFloor = false;
-
-            //now step down..
-            if (UseStep && StartedOnGround)
-            {
-                downstep = DetectAndFixCollisions(BoundingBox, downstep, ref downStepHitFloor, Dimension.Y,
-                    out relevantFriction, out frictionVelocity);
-                Position += new Vector3(0, downstep, 0);
-            }
 
             //and finally do any y-changes
             bool collidedY = false;
@@ -392,7 +352,7 @@ namespace Voxelist.Entities
                 foreach (Entity other in WorldManager.InteractiveEntities())
                 {
                     if (other.IsAWallFor(this))
-                        possibleEntityCollisions.Enqueue(new Collider(other, Position.chunkX, Position.chunkZ));
+                        possibleEntityCollisions.Enqueue(new Collider(other));
 
                 }
             }
@@ -447,38 +407,31 @@ namespace Voxelist.Entities
             if (relevantChange == 0)
                 return originalIntendedChange;
 
-            Vector3 boxmin = unmovedBox.Min;
-            Vector3 boxmax = unmovedBox.Max;
+            float SIGNED_EPSILON = GameConstants.PHYSICS_COLLISION_EPSILON;
+            if (relevantChange < 0) SIGNED_EPSILON = -SIGNED_EPSILON;
 
-            if (relevantChange > 0)//if the relevant direction is POSITIVE...
+            Vector3 changeVector;
+            switch (movementDimension)
             {
-                switch (movementDimension)//then affect the relevant maximum
-                {
-                    case Dimension.X: boxmax.X += relevantChange + GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
-                    case Dimension.Y: boxmax.Y += relevantChange + GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
-                    case Dimension.Z: boxmax.Z += relevantChange + GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
-                    default: throw new NotImplementedException();
-                }
+                case Dimension.X: changeVector = Vector3.UnitX; break;
+                case Dimension.Y: changeVector = Vector3.UnitY; break;
+                case Dimension.Z: changeVector = Vector3.UnitZ; break;
+                default: throw new NotImplementedException();
             }
-            else //if the relevant direction is NEGATIVE...
-            {
-                switch (movementDimension)//then affect the relevant minimum
-                {
-                    case Dimension.X: boxmin.X += relevantChange - GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
-                    case Dimension.Y: boxmin.Y += relevantChange - GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
-                    case Dimension.Z: boxmin.Z += relevantChange - GameConstants.PHYSICS_COLLISION_EPSILON / 2.0f; break;
-                    default: throw new NotImplementedException();
-                }
-            }
-
-            BoundingBox stretchedBox = new BoundingBox(boxmin, boxmax);
+            changeVector *= relevantChange + SIGNED_EPSILON / 2.0f;
+            BoundingBox stretchedBox = Numerical.StretchBox(unmovedBox, changeVector);
 
             foreach (Collider collider in Collisions(stretchedBox))
             {
-                BoundingBox blockBounds = collider.BoundingBox;
+                BoundingBox blockBounds = collider.GetRelativeBoundingBox(Position.chunkX, Position.chunkZ);
 
                 if (blockBounds.Intersects(unmovedBox))
+                {
+                    if (this == collider.collidedObject)
+                        throw new NotFiniteNumberException();
+
                     throw new NotImplementedException();
+                }
 
                 if (!blockBounds.Intersects(stretchedBox))
                     continue;
@@ -493,17 +446,17 @@ namespace Voxelist.Entities
                     switch (movementDimension)
                     {
                         case Dimension.X:
-                            stretchedBox.Max.X = blockBounds.Min.X - GameConstants.PHYSICS_COLLISION_EPSILON;
+                            stretchedBox.Max.X = blockBounds.Min.X - SIGNED_EPSILON;
                             relevantChange = stretchedBox.Max.X - unmovedBox.Max.X;
                             break;
 
                         case Dimension.Y:
-                            stretchedBox.Max.Y = blockBounds.Min.Y - GameConstants.PHYSICS_COLLISION_EPSILON;
+                            stretchedBox.Max.Y = blockBounds.Min.Y - SIGNED_EPSILON;
                             relevantChange = stretchedBox.Max.Y - unmovedBox.Max.Y;
                             break;
 
                         case Dimension.Z:
-                            stretchedBox.Max.Z = blockBounds.Min.Z - GameConstants.PHYSICS_COLLISION_EPSILON;
+                            stretchedBox.Max.Z = blockBounds.Min.Z - SIGNED_EPSILON;
                             relevantChange = stretchedBox.Max.Z - unmovedBox.Max.Z;
                             break;
 
@@ -515,17 +468,17 @@ namespace Voxelist.Entities
                     switch (movementDimension)
                     {
                         case Dimension.X:
-                            stretchedBox.Min.X = blockBounds.Max.X + GameConstants.PHYSICS_COLLISION_EPSILON;
+                            stretchedBox.Min.X = blockBounds.Max.X - SIGNED_EPSILON;
                             relevantChange = stretchedBox.Min.X - unmovedBox.Min.X;
                             break;
 
                         case Dimension.Y:
-                            stretchedBox.Min.Y = blockBounds.Max.Y + GameConstants.PHYSICS_COLLISION_EPSILON;
+                            stretchedBox.Min.Y = blockBounds.Max.Y - SIGNED_EPSILON;
                             relevantChange = stretchedBox.Min.Y - unmovedBox.Min.Y;
                             break;
 
                         case Dimension.Z:
-                            stretchedBox.Min.Z = blockBounds.Max.Z + GameConstants.PHYSICS_COLLISION_EPSILON;
+                            stretchedBox.Min.Z = blockBounds.Max.Z - SIGNED_EPSILON;
                             relevantChange = stretchedBox.Min.Z - unmovedBox.Min.Z;
                             break;
 

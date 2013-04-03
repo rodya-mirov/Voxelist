@@ -159,10 +159,5 @@ namespace VoxelistDemo1
         {
             throw new NotImplementedException();
         }
-
-        protected override float UpStepSize
-        {
-            get { return 1.2f; }
-        }
     }
 }

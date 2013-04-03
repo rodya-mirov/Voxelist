@@ -80,11 +80,6 @@ namespace VoxelistDemo3
             get { throw new NotImplementedException(); }
         }
 
-        protected override float UpStepSize
-        {
-            get { throw new NotImplementedException(); }
-        }
-
         public override float AirborneDrag_Modifier
         {
             get { throw new NotImplementedException(); }

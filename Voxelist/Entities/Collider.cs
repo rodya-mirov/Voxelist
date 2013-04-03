@@ -10,37 +10,64 @@ namespace Voxelist.Entities
 {
     public struct Collider
     {
-        public BoundingBox BoundingBox;
+        public BoundingBox GetRelativeBoundingBox(int myChunkX, int myChunkZ)
+        {
+            Vector3 translation = new Vector3(
+                GameConstants.CHUNK_X_WIDTH * (colliderChunkX - myChunkX),
+                0,
+                GameConstants.CHUNK_Z_LENGTH * (colliderChunkZ - myChunkZ)
+                );
+
+            return new BoundingBox(
+                StartingBoundingBox.Min + translation,
+                StartingBoundingBox.Max + translation
+                );
+        }
+
+        public BoundingBox StartingBoundingBox;
 
         public float Friction;
         public Vector3 FrictionVelocity;
 
+        public int colliderChunkX, colliderChunkZ;
+
         public Object collidedObject;
 
-        public Collider(Block block, Vector3 translation, BlockHandler handler)
+        /// <summary>
+        /// Construct a new collider object for a block.  Note the specified coordinates are for
+        /// the block itself (describing its position in space) and not for the thing it's colliding with.
+        /// </summary>
+        /// <param name="block"></param>
+        /// <param name="chunkX"></param>
+        /// <param name="blockX"></param>
+        /// <param name="chunkZ"></param>
+        /// <param name="blockZ"></param>
+        /// <param name="handler"></param>
+        public Collider(Block block, int chunkX, int chunkZ, int blockX, int blockY, int blockZ, BlockHandler handler)
         {
             this.collidedObject = block;
 
-            this.BoundingBox = handler.PhysicalBlockingBox(block);
-            this.BoundingBox = new BoundingBox(BoundingBox.Min + translation, BoundingBox.Max + translation);
+            this.colliderChunkX = chunkX;
+            this.colliderChunkZ = chunkZ;
+
+            this.StartingBoundingBox = handler.PhysicalBlockingBox(block);
+            Vector3 translation = new Vector3(blockX, blockY, blockZ);
+
+            this.StartingBoundingBox = new BoundingBox(
+                StartingBoundingBox.Min + translation, StartingBoundingBox.Max + translation);
 
             this.Friction = handler.Friction(block);
             this.FrictionVelocity = handler.FrictionVelocity(block);
         }
 
-        public Collider(Entity other, int myChunkX, int myChunkZ)
+        public Collider(Entity other)
         {
             this.collidedObject = other;
 
-            Vector3 translation = new Vector3(
-                GameConstants.CHUNK_X_WIDTH * (other.Position.chunkX - myChunkX),
-                0,
-                GameConstants.CHUNK_Z_LENGTH * (other.Position.chunkZ - myChunkZ));
+            this.colliderChunkX = other.Position.chunkX;
+            this.colliderChunkZ = other.Position.chunkZ;
 
-            this.BoundingBox = other.BoundingBox;
-            this.BoundingBox = new BoundingBox(
-                this.BoundingBox.Min + translation,
-                this.BoundingBox.Max + translation);
+            this.StartingBoundingBox = other.BoundingBox;
 
             this.Friction = other.Friction_Induced;
             this.FrictionVelocity = other.FrictionVelocity_Induced;

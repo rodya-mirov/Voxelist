@@ -77,11 +77,6 @@ namespace VoxelistDemo1
             get { return intendedVelocity; }
         }
 
-        protected override float UpStepSize
-        {
-            get { return 0.3f; }
-        }
-
         public override void Update(GameTime gametime)
         {
             base.physicsUpdate(gametime);

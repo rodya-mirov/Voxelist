@@ -122,7 +122,7 @@ namespace VoxelistDemo1
         private static void addEntityData(List<EntitySchema> entityDataToFill)
         {
             //one scootblock per chunk
-            entityDataToFill.Add(new EntitySchema(0, 4, 4, 4));
+            entityDataToFill.Add(new EntitySchema(0, 4, 40, 4));
 
             //4 scenery blocks per chunk
             /*

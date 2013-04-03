@@ -108,10 +108,7 @@ namespace Voxelist.Mapping
                         if (BlockHandler.IsPassable(block))
                             continue;
 
-                        yield return new Collider(
-                            block,
-                            new Vector3(x, y, z),
-                            BlockHandler);
+                        yield return new Collider(block, chunkX, chunkZ, x, y, z, BlockHandler);
                     }
                 }
             }

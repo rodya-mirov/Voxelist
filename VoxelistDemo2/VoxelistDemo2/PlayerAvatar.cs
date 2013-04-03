@@ -57,11 +57,6 @@ namespace VoxelistDemo2
             get { return 50; }
         }
 
-        protected override float UpStepSize
-        {
-            get { return 0.52f; }
-        }
-
         public override bool CollidesWithMapGeometry
         {
             get
