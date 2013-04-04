@@ -365,7 +365,14 @@ namespace Voxelist.Entities
 
                 foreach (Entity other in touchedEntities)
                 {
-                    if (other.IsAWallFor(this))
+                    BoundingBox relativeBox = other.BoundingBox;
+                    Vector3 translation = new Vector3(
+                        (other.Position.chunkX - Position.chunkX) * GameConstants.CHUNK_X_WIDTH,
+                        0,
+                        (other.Position.chunkZ - Position.chunkZ) * GameConstants.CHUNK_Z_LENGTH);
+                    relativeBox = new BoundingBox(relativeBox.Min + translation, relativeBox.Max + translation);
+
+                    if (other.IsAWallFor(this) && relativeBox.Intersects(stretchedBox))
                         possibleEntityCollisions.Enqueue(new Collider(other));
                 }
             }
