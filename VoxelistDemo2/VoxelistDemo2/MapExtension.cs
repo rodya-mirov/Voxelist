@@ -12,7 +12,7 @@ namespace VoxelistDemo2
     public class MapExtension : Map
     {
         public MapExtension(BlockHandlerExtension handler)
-            : base(handler)
+            : base(handler, 0, 0)
         {
         }
 

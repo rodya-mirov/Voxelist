@@ -13,8 +13,9 @@ namespace Voxelist.Mapping
     public abstract class Map
     {
         public BlockHandler BlockHandler { get; protected set; }
+        private int startCenterChunkX, startCenterChunkZ;
 
-        public Map(BlockHandler handler)
+        public Map(BlockHandler handler, int startCenterChunkX, int startCenterChunkZ)
         {
             this.BlockHandler = handler;
 
@@ -22,11 +23,14 @@ namespace Voxelist.Mapping
 
             lastCenterX = CenterChunkX;
             lastCenterZ = CenterChunkZ;
+
+            this.startCenterChunkX = startCenterChunkX;
+            this.startCenterChunkZ = startCenterChunkZ;
         }
 
         public void LoadContent(Game game)
         {
-            chunkCache.StartCaching(0, 0, StartingChunkRadiusToLoad);
+            chunkCache.StartCaching(startCenterChunkX, startCenterChunkZ, StartingChunkRadiusToLoad);
 
             setupEntityGeneration();
         }
@@ -123,7 +127,7 @@ namespace Voxelist.Mapping
         /// <summary>
         /// Make sure this is higher than the ViewDistance!
         /// </summary>
-        private int CacheRadius { get { return ChunkViewDistance + 1; } }
+        private int CacheRadius { get { return ChunkViewDistance; } }
 
         /// <summary>
         /// Gets the Chunk located at the specified CHUNK coordinates.
@@ -141,11 +145,32 @@ namespace Voxelist.Mapping
                 return chunkCache.GetChunk(chunkX, chunkZ);
             else if (urgent)
             {
-                chunkCache.AddChunk(chunkX, chunkZ);
+                chunkCache.ForceAddChunk(chunkX, chunkZ);
                 return chunkCache.GetChunk(chunkX, chunkZ);
             }
             else
                 return null;
+        }
+
+        /// <summary>
+        /// This saves the specified chunk.  The only way it can fail is
+        /// if the specified chunk is not actually loaded; so it returns
+        /// false precisely when it successfully saves the chunk.
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <returns></returns>
+        public bool SaveChunk(int chunkX, int chunkZ)
+        {
+            if (chunkCache.IsReady(chunkX, chunkZ))
+            {
+                chunkCache.SaveChunk(chunkX, chunkZ);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -215,10 +240,18 @@ namespace Voxelist.Mapping
                     {
                         translation.Z = chunkOffsetZ * GameConstants.CHUNK_Z_LENGTH;
 
-                        Chunk toDraw = GetChunk(chunkOffsetX + centerChunkX, chunkOffsetZ + centerChunkZ, false);
+                        int chunkX = chunkOffsetX + centerChunkX;
+                        int chunkZ = chunkOffsetZ + centerChunkZ;
+
+                        Chunk toDraw = GetChunk(chunkX, chunkZ, false);
 
                         if (toDraw != null)
+                        {
                             toDraw.Draw(translation, textureIndex);
+
+                            if (toDraw.chunkX != chunkX || toDraw.chunkZ != chunkZ)
+                                throw new NotImplementedException();
+                        }
                     }
                 }
             }
@@ -266,7 +299,7 @@ namespace Voxelist.Mapping
                     entitiesLoaded[chunkX, chunkZ] = true;
 
                     if (chunk.chunkX != chunkX || chunk.chunkZ != chunkZ)
-                        throw new NotImplementedException();
+                        throw new InvalidOperationException();
 
                     foreach (Entity entity in chunk.MakeGeneratedEntities(builder, manager))
                         yield return entity;

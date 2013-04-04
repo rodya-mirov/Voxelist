@@ -6,6 +6,7 @@ using Voxelist.Entities;
 using Microsoft.Xna.Framework;
 using Voxelist.Mapping;
 using Voxelist.Rendering;
+using Voxelist.Utilities;
 
 namespace VoxelistDemo1
 {

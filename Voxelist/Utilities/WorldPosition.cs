@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Voxelist.Utilities;
 
-namespace Voxelist.Mapping
+namespace Voxelist.Utilities
 {
     public struct WorldPosition
     {

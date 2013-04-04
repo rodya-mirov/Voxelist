@@ -97,6 +97,7 @@
     <Compile Include="Entities\Collider.cs" />
     <Compile Include="Entities\EntityBuilder.cs" />
     <Compile Include="Entities\EntitySchema.cs" />
+    <Compile Include="Utilities\ChunkCoordinate.cs" />
     <Compile Include="Utilities\RandomHelper.cs" />
     <Compile Include="Utilities\TorusBoolArray.cs" />
     <Compile Include="VoxelistGame.cs" />
@@ -109,7 +110,7 @@
     <Compile Include="Utilities\Enums.cs" />
     <Compile Include="Utilities\Point3.cs" />
     <Compile Include="Rendering\WorldManager.cs" />
-    <Compile Include="Mapping\WorldPosition.cs" />
+    <Compile Include="Utilities\WorldPosition.cs" />
     <Compile Include="Utilities\FPSComponent.cs" />
     <Compile Include="Mapping\Chunk.cs" />
     <Compile Include="Mapping\Map.cs" />

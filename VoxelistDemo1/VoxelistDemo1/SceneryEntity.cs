@@ -8,6 +8,7 @@ using Voxelist.GeometryPrimitives;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Voxelist.Rendering;
+using Voxelist.Utilities;
 
 namespace VoxelistDemo1
 {

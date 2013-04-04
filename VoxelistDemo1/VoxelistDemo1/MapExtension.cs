@@ -12,7 +12,7 @@ namespace VoxelistDemo1
     public class MapExtension : Map
     {
         public MapExtension(BlockHandlerExtension handler)
-            : base(handler)
+            : base(handler, 0, 0)
         {
         }
 
@@ -121,6 +121,8 @@ namespace VoxelistDemo1
 
         private static void addEntityData(List<EntitySchema> entityDataToFill)
         {
+            entityDataToFill.Clear();
+
             //one scootblock per chunk
             entityDataToFill.Add(new EntitySchema(0, 4, 40, 4));
 

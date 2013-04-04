@@ -4,235 +4,250 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Voxelist.Utilities;
+using Voxelist.Entities;
+using Voxelist.BlockHandling;
 
 namespace Voxelist.Mapping
 {
+    /// <summary>
+    /// Multithreading rules- never run the OverwriteChunkData in a
+    /// locked portion, and lock literally everything else (everything
+    /// else runs pretty much instantly).
+    /// </summary>
     public class ChunkCache
     {
-        //The cache is a square, and this is a side length.
-        //This will always be odd, because it's entered as a radius
-        //(so you get 2*r+1 on each side).  This is actually used in
-        //one method (the loader method, to help it circle the center)
-        //so be aware of that if you change it.
-        private int Cache_Size;
-
-        private Chunk[,] cachedChunks;
-        private Map map;
-
-        #region Dimensions
-        public int ChunkXMin { get; private set; }
-        public int ChunkXMax
-        {
-            get { return ChunkXMin + Cache_Size - 1; }
-            private set { ChunkXMin = value - Cache_Size + 1; }
-        }
-
-        public int ChunkZMin { get; private set; }
-        public int ChunkZMax
-        {
-            get { return ChunkZMin + Cache_Size - 1; }
-            private set { ChunkZMin = value - Cache_Size + 1; }
-        }
-
-        private int xStartIndex;
-        private int zStartIndex;
-        #endregion
-
-        #region Cache Loading Thread Stuff
-        private bool[,] cacheIsValid;
-        private Object validBitsLock = new Object();
-
-        private Thread cacheLoaderThread;
-
-        private void LoaderThreadMethod()
-        {
-            while (keepCacheLoaderRunning)
-            {
-                int chunkXtoFind, chunkZtoFind;
-                bool foundGoal = false;
-                Chunk copyOver = null;
-
-                //first, find your next favorite target
-                lock (validBitsLock)
-                {
-                    chunkXtoFind = 0;
-                    chunkZtoFind = 0;
-
-                    int centerX = ChunkXMin + (Cache_Size / 2);
-                    int centerZ = ChunkZMin + (Cache_Size / 2);
-
-                    int centerXIndex = Numerical.IntMod(centerX - ChunkXMin + xStartIndex, Cache_Size);
-                    int centerZIndex = Numerical.IntMod(centerZ - ChunkZMin + zStartIndex, Cache_Size);
-
-                    if (!cacheIsValid[centerXIndex, centerZIndex])
-                    {
-                        chunkXtoFind = centerX;
-                        chunkZtoFind = centerZ;
-                        copyOver = cachedChunks[centerXIndex, centerZIndex];
-
-                        foundGoal = true;
-                    }
-                    else
-                    {
-                        //we go in this circular pattern, which gives good results
-                        //but looks fairly weird in code form
-                        int radius = 1;
-                        while (!foundGoal && radius * 2 + 1 <= Cache_Size)
-                        {
-                            int leftX = centerX - radius;
-                            int rightX = centerX + radius;
-                            int topZ = centerZ - radius;
-                            int bottomZ = centerZ + radius;
-
-                            int leftActualIndex = Numerical.IntMod(leftX - ChunkXMin + xStartIndex, Cache_Size);
-                            int rightActualIndex = Numerical.IntMod(rightX - ChunkXMin + xStartIndex, Cache_Size);
-                            int topActualIndex = Numerical.IntMod(topZ - ChunkZMin + zStartIndex, Cache_Size);
-                            int bottomActualIndex = Numerical.IntMod(bottomZ - ChunkZMin + zStartIndex, Cache_Size);
-
-                            //check the left/right edges of the square...
-                            for (int z = topZ; !foundGoal && z <= bottomZ; z++)
-                            {
-                                int actualZIndex = Numerical.IntMod(z - ChunkZMin + zStartIndex, Cache_Size);
-                                if (!cacheIsValid[leftActualIndex, actualZIndex])
-                                {
-                                    chunkXtoFind = leftX;
-                                    chunkZtoFind = z;
-                                    foundGoal = true;
-                                    copyOver = cachedChunks[leftActualIndex, actualZIndex];
-                                }
-                                else if (!cacheIsValid[rightActualIndex, actualZIndex])
-                                {
-                                    chunkXtoFind = rightX;
-                                    chunkZtoFind = z;
-                                    copyOver = cachedChunks[rightActualIndex, actualZIndex];
-                                    foundGoal = true;
-                                }
-                            }
-
-                            //check the top/bottom edges of the square...
-                            for (int x = leftX; !foundGoal && x <= rightX; x++)
-                            {
-                                int actualXIndex = Numerical.IntMod(x - ChunkXMin + xStartIndex, Cache_Size);
-                                if (!cacheIsValid[actualXIndex, topActualIndex])
-                                {
-                                    chunkXtoFind = x;
-                                    chunkZtoFind = topZ;
-                                    foundGoal = true;
-                                    copyOver = cachedChunks[actualXIndex, topActualIndex];
-                                }
-                                else if (!cacheIsValid[actualXIndex, bottomActualIndex])
-                                {
-                                    chunkXtoFind = x;
-                                    chunkZtoFind = bottomZ;
-                                    foundGoal = true;
-                                    copyOver = cachedChunks[actualXIndex, bottomActualIndex];
-                                }
-                            }
-
-                            radius += 1;
-                        }
-                    }
-                }
-
-                //if we didn't find anything, take a break and let the game run harder
-                if (!foundGoal)
-                {
-                    Thread.Sleep(10);
-                }
-                else
-                {
-                    //otherwise, actually make the chunk (this could take a while)
-                    if (copyOver == null)
-                        copyOver = new Chunk(map.BlockHandler);
-
-                    copyOver.OverwriteChunkDataWith(map, chunkXtoFind, chunkZtoFind);
-
-                    //now stick it back in
-                    lock (validBitsLock)
-                    {
-                        //sometimes the goalposts move on you ...
-                        if (chunkXtoFind < ChunkXMin || chunkXtoFind > ChunkXMax || chunkZtoFind < ChunkZMin || chunkZtoFind > ChunkZMax)
-                            continue;
-
-                        int xIndex = Numerical.IntMod(chunkXtoFind - ChunkXMin + xStartIndex, Cache_Size);
-                        int zIndex = Numerical.IntMod(chunkZtoFind - ChunkZMin + zStartIndex, Cache_Size);
-
-                        cacheIsValid[xIndex, zIndex] = true;
-                        cachedChunks[xIndex, zIndex] = copyOver;
-                    }
-                }
-
-                Thread.Sleep(10);
-            }
-
-            cacheLoaderIsRunning = false;
-        }
-        #endregion
+        private Map Map { get; set; }
 
         public ChunkCache(Map map, int cacheRadius)
         {
-            this.map = map;
+            this.Map = map;
+            this.Radius = cacheRadius;
 
-            Cache_Size = cacheRadius * 2 + 1;
+            this.savedChunkData = new Dictionary<ChunkCoordinate, CacheData>();
 
-            cachedChunks = new Chunk[Cache_Size, Cache_Size];
-            cacheIsValid = new bool[Cache_Size, Cache_Size];
-
-            cacheLoaderThread = new Thread(this.LoaderThreadMethod);
+            LoadStartingData();
         }
-
-        private bool keepCacheLoaderRunning = true;
-        private bool cacheLoaderIsRunning = false;
 
         public void Dispose()
         {
-            keepCacheLoaderRunning = false;
+            loaderShouldKeepRunning = false;
         }
 
-        public void SetCacheDimensions(int cacheDimensions)
+        #region Grid Data Storage
+        private CacheData[,] cache;
+
+        private int Radius { get; set; }
+        private int Width { get { return 2 * Radius + 1; } }
+        private int Height { get { return 2 * Radius + 1; } }
+
+        private int XMin { get; set; }
+        private int XMax { get { return XMin + Width - 1; } }
+
+        private int ZMin { get; set; }
+        private int ZMax { get { return ZMin + Height - 1; } }
+
+        private void LoadStartingData()
         {
-            keepCacheLoaderRunning = false;
+            cache = new CacheData[Width, Height];
 
-            while (cacheLoaderIsRunning)
-                Thread.Sleep(0);
-
-            keepCacheLoaderRunning = true;
-
-            //something
-            throw new NotImplementedException();
-        }
-
-        public void StartCaching(int chunkX, int chunkZ, int requiredStartRadius)
-        {
-            lock (validBitsLock)
+            for (int x = 0; x < Width; x++)
             {
-                this.ChunkXMin = chunkX - Cache_Size / 2;
-                this.ChunkZMin = chunkZ - Cache_Size / 2;
-
-                this.xStartIndex = 0;
-                this.zStartIndex = 0;
-
-                if (requiredStartRadius * 2 + 1 >= Cache_Size)
-                    requiredStartRadius = Cache_Size / 2;
-
-                for (int x = chunkX - requiredStartRadius; x <= chunkX + requiredStartRadius; x++)
+                for (int z = 0; z < Height; z++)
                 {
-                    for (int z = chunkZ - requiredStartRadius; z <= chunkZ + requiredStartRadius; z++)
-                    {
-                        int xIndex = Numerical.IntMod(x - ChunkXMin + xStartIndex, Cache_Size);
-                        int zIndex = Numerical.IntMod(z - ChunkZMin + zStartIndex, Cache_Size);
+                    cache[x, z] = CacheData.MakeDefault();
+                }
+            }
+        }
 
-                        cachedChunks[xIndex, zIndex] = new Chunk(map.BlockHandler);
-                        cachedChunks[xIndex, zIndex].OverwriteChunkDataWith(map, x, z);
-                        cacheIsValid[xIndex, zIndex] = true;
-                    }
+        private bool IsInGridRange(int chunkX, int chunkZ)
+        {
+            lock (CacheLock)
+            {
+                return (XMin <= chunkX && chunkX <= XMax && ZMin <= chunkZ && chunkZ <= ZMax);
+            }
+        }
+
+        /// <summary>
+        /// Returns the CacheData at a specific point from the grid array.  Does not
+        /// interfere with the savedChunk data (loading or saving).  Throws an
+        /// IndexOutOfRangeException if the specified chunk coordinates are out
+        /// of the range of the grid.
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <returns></returns>
+        private CacheData this[int chunkX, int chunkZ]
+        {
+            get
+            {
+                lock (CacheLock)
+                {
+                    ChunkCoordinate coord = new ChunkCoordinate(chunkX, chunkZ);
+                    if (savedChunkData.ContainsKey(coord))
+                        return savedChunkData[coord];
+
+                    if (!IsInGridRange(chunkX, chunkZ))
+                        throw new IndexOutOfRangeException();
+
+                    int xIndex = Numerical.IntMod(chunkX, Width);
+                    int zIndex = Numerical.IntMod(chunkZ, Height);
+
+                    return cache[xIndex, zIndex];
                 }
             }
 
-            cacheLoaderIsRunning = true;
-            cacheLoaderThread.Start();
+            set
+            {
+                lock (CacheLock)
+                {
+                    if (!IsInGridRange(chunkX, chunkZ))
+                        throw new IndexOutOfRangeException();
+
+                    int xIndex = Numerical.IntMod(chunkX, Width);
+                    int zIndex = Numerical.IntMod(chunkZ, Height);
+
+                    cache[xIndex, zIndex] = value;
+                }
+            }
         }
 
+        #region Grid Movement
+        /// <summary>
+        /// This makes sure the desired chunk is within the cache bounds,
+        /// but does not create any new cached chunks right now.  It may
+        /// actually (probably will) lose some existing data though!
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        public void Request(int chunkX, int chunkZ)
+        {
+            lock (CacheLock)
+            {
+                int oldXMin = XMin;
+                int oldZMin = ZMin;
+
+                while (chunkZ < ZMin)
+                    addTopRow();
+
+                while (chunkZ > ZMax)
+                    addBottomRow();
+
+                while (chunkX < XMin)
+                    addLeftColumn();
+
+                while (chunkX > XMax)
+                    addRightColumn();
+            }
+        }
+
+        /// <summary>
+        /// Reduces ZMin by 1, and alters the cache appropriately,
+        /// which in this case means invalidating all the data for
+        /// ZMax.  Should only be called within Request, because it
+        /// doesn't allocate the lock!
+        /// </summary>
+        private void addTopRow()
+        {
+            //the old maximum becomes the new minimum
+            for (int chunkX = XMin; chunkX <= XMax; chunkX++)
+                this[chunkX, ZMax].Invalidate(chunkX, ZMin - 1, this);
+
+            ZMin--;
+        }
+
+        /// <summary>
+        /// Increases ZMin by 1, and alters the cache appropriately,
+        /// which in this case means invalidating all the data for
+        /// ZMin.  Should only be called within Request, because it
+        /// doesn't allocate the lock! 
+        /// </summary>
+        private void addBottomRow()
+        {
+            //the old minimum becomes the new maximum
+            for (int chunkX = XMin; chunkX <= XMax; chunkX++)
+                this[chunkX, ZMin].Invalidate(chunkX, ZMax + 1, this);
+
+            ZMin++;
+        }
+
+        /// <summary>
+        /// Decreases XMin by 1, and alters the cache appropriately,
+        /// which in this case means invalidating all the data for
+        /// XMax.  Should only be called within Request, because it
+        /// doesn't  allocate the lock!
+        /// </summary>
+        private void addLeftColumn()
+        {
+            for (int chunkZ = ZMin; chunkZ <= ZMax; chunkZ++)
+                this[XMax, chunkZ].Invalidate(XMin - 1, chunkZ, this);
+
+            XMin--;
+        }
+
+        /// <summary>
+        /// Increases XMix by 1, and alters the cache appropriately,
+        /// which in this case means invalidating all the data for
+        /// XMin.  Should only be called within Request, because it
+        /// doesn't allocate the lock!
+        /// </summary>
+        private void addRightColumn()
+        {
+            for (int chunkZ = ZMin; chunkZ <= ZMax; chunkZ++)
+                this[XMin, chunkZ].Invalidate(XMax + 1, chunkZ, this);
+
+            XMin++;
+        }
+        #endregion
+        #endregion
+
+        #region Saved Chunks
+        private Dictionary<ChunkCoordinate, CacheData> savedChunkData;
+
+        /// <summary>
+        /// Whether or not there is cached data at the specified chunk coordinate.
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <returns></returns>
+        public bool HasSavedChunk(int chunkX, int chunkZ)
+        {
+            lock (CacheLock)
+            {
+                return savedChunkData.ContainsKey(new ChunkCoordinate(chunkX, chunkZ));
+            }
+        }
+
+        /// <summary>
+        /// Attempts to save the specified chunk for later.  If the chunk was fully
+        /// loaded, it saves it and returns true.  If the chunk was NOT fully loaded,
+        /// it just returns false (does not attempt to "save it later.")
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <returns></returns>
+        public bool SaveChunk(int chunkX, int chunkZ)
+        {
+            lock (CacheLock)
+            {
+                if (IsReady(chunkX, chunkZ))
+                {
+                    CacheData dat = this[chunkX, chunkZ];
+                    savedChunkData[new ChunkCoordinate(chunkX, chunkZ)] = dat;
+
+                    CacheData newData = CacheData.MakeDefault();
+                    newData.NeedsToBeLoaded = false;
+                    this[chunkX, chunkZ] = newData;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        #endregion
+
+        #region Public Interface
         /// <summary>
         /// Determines whether the specified chunk coordinate is currently
         /// read to load and use.  If the answer is no, this method
@@ -244,162 +259,241 @@ namespace Voxelist.Mapping
         /// <returns></returns>
         public bool IsReady(int chunkX, int chunkZ)
         {
-            lock (validBitsLock)
+            lock (CacheLock)
             {
-                if (chunkX >= ChunkXMin && chunkX <= ChunkXMax && chunkZ <= ChunkZMax && chunkZ >= ChunkZMin)
+                if (HasSavedChunk(chunkX, chunkZ))
+                    return true;
+
+                if (IsInGridRange(chunkX, chunkZ))
                 {
+                    return !this[chunkX, chunkZ].NeedsToBeLoaded;
+                }
+                else
+                {
+                    Request(chunkX, chunkZ);
+                    return false;
+                }
+            }
+        }
 
-                    int xIndex = chunkX - ChunkXMin + xStartIndex;
-                    if (xIndex >= Cache_Size)
-                        xIndex -= Cache_Size;
+        /// <summary>
+        /// Gets the chunk at the specified coordinates.  If the chunk at that
+        /// position is not ready, it will throw an error.
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <returns></returns>
+        public Chunk GetChunk(int chunkX, int chunkZ)
+        {
+            lock (CacheLock)
+            {
+                if (HasSavedChunk(chunkX, chunkZ))
+                    return savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].Chunk;
+                else
+                {
+                    CacheData dat = this[chunkX, chunkZ];
+                    if (dat.NeedsToBeLoaded)
+                        throw new ArgumentOutOfRangeException("Chunk is not yet ready!");
+                    else
+                        return dat.Chunk;
+                }
+            }
+        }
 
-                    int zIndex = chunkZ - ChunkZMin + zStartIndex;
-                    if (zIndex >= Cache_Size)
-                        zIndex -= Cache_Size;
+        public void StartCaching(int centerChunkX, int centerChunkZ, int initialRadius)
+        {
+            XMin = centerChunkX - Radius;
+            ZMin = centerChunkZ - Radius;
 
-                    return cacheIsValid[xIndex, zIndex];
+            for (int chunkX = centerChunkX - initialRadius; chunkX <= centerChunkX + initialRadius; chunkX++)
+            {
+                for (int chunkZ = centerChunkZ - initialRadius; chunkZ <= centerChunkZ + initialRadius; chunkZ++)
+                {
+                    ForceAddChunk(chunkX, chunkZ);
                 }
             }
 
-            Request(chunkX, chunkZ);
-            return false;
+            StartLoaderThread();
         }
 
-        public Chunk GetChunk(int chunkX, int chunkZ)
-        {
-            lock (validBitsLock)
-            {
-                int xIndex = chunkX - ChunkXMin + xStartIndex;
-
-                if (xIndex >= Cache_Size)
-                    xIndex -= Cache_Size;
-
-                int zIndex = chunkZ - ChunkZMin + zStartIndex;
-
-                if (zIndex >= Cache_Size)
-                    zIndex -= Cache_Size;
-
-                if (!cacheIsValid[xIndex, zIndex])
-                    throw new ArgumentOutOfRangeException("Chunk is not yet loaded.");
-
-                return cachedChunks[xIndex, zIndex];
-            }
-        }
-
-        #region Cache Moving
         /// <summary>
-        /// This makes sure the desired chunk is within the cache bounds,
-        /// but does not create any new cached chunks right now.
+        /// Forces the Cache to add a new chunk immediately.  This is usually
+        /// a bad idea in terms of slowdown, but sometimes slowdown is better
+        /// than the other bugs it could create.
         /// </summary>
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
-        public void Request(int chunkX, int chunkZ)
+        public void ForceAddChunk(int chunkX, int chunkZ)
         {
-            lock (validBitsLock)
+            lock (CacheLock)
             {
-                while (chunkZ < ChunkZMin)
-                    addTopRow();
+                Request(chunkX, chunkZ);
 
-                while (chunkZ > ChunkZMax)
-                    addBottomRow();
-
-                while (chunkX < ChunkXMin)
-                    addLeftColumn();
-
-                while (chunkX > ChunkXMax)
-                    addRightColumn();
+                MakeAndCacheChunk(chunkX, chunkZ);
             }
-        }
-
-        private void addTopRow()
-        {
-            //allows for a new top row
-            ChunkZMin--;
-
-            //fixes the indexing so that the old data is still indexed correctly
-            zStartIndex = Numerical.IntMod(zStartIndex - 1, Cache_Size);
-
-            //now fix the new top row
-            for (int x = 0; x < Cache_Size; x++)
-            {
-                cacheIsValid[x, zStartIndex] = false;
-            }
-        }
-
-        private void addBottomRow()
-        {
-            //set up the new bottom row, which replaces the old top row
-            for (int x = 0; x < Cache_Size; x++)
-            {
-                cacheIsValid[x, zStartIndex] = false;
-            }
-
-            //updates the minimum
-            ChunkZMin++;
-
-            //fixes the indexing
-            zStartIndex = Numerical.IntMod(zStartIndex + 1, Cache_Size);
-        }
-
-        private void addLeftColumn()
-        {
-            //allows for the next left column
-            ChunkXMin--;
-
-            //fixes the indexing
-            xStartIndex = Numerical.IntMod(xStartIndex - 1, Cache_Size);
-
-            //fix the new left column
-            for (int z = 0; z < Cache_Size; z++)
-            {
-                cacheIsValid[xStartIndex, z] = false;
-            }
-        }
-
-        private void addRightColumn()
-        {
-            //set up the new right column, which replaces the old left column
-            for (int z = 0; z < Cache_Size; z++)
-            {
-                cacheIsValid[xStartIndex, z] = false;
-            }
-
-            //updates the minimum
-            ChunkXMin++;
-
-            //fixes the indexing
-            xStartIndex = Numerical.IntMod(xStartIndex + 1, Cache_Size);
         }
         #endregion
 
-        /// <summary>
-        /// This adds a chunk to the grid immediately, without waiting
-        /// for the backup thread to take care of it.  If the specified
-        /// coordinates are outside the ideal cache range, it will either
-        /// drop the request (if forceSave is false) or move the cache
-        /// around in order to force it to be contained.
-        /// </summary>
-        /// <param name="chunkX"></param>
-        /// <param name="chunkZ"></param>
-        public void AddChunk(int chunkX, int chunkZ)
+        #region Multithreading
+        private readonly object CacheLock = new object();
+
+        private Thread cacheLoaderThread;
+        private bool loaderShouldKeepRunning = true;
+
+        private void StartLoaderThread()
         {
-            Request(chunkX, chunkZ);
+            loaderShouldKeepRunning = true;
+            cacheLoaderThread = new Thread(LoaderThreadMethod);
 
-            lock (validBitsLock)
+            cacheLoaderThread.Start();
+        }
+
+        /// <summary>
+        /// This is the method which the cacheLoaderThread runs
+        /// over and over and over, until loaderShouldKeepRunning
+        /// is false;
+        /// </summary>
+        private void LoaderThreadMethod()
+        {
+            while (loaderShouldKeepRunning)
             {
-                if (chunkX < ChunkXMin || chunkX > ChunkXMax || chunkZ < ChunkZMin || chunkZ > ChunkZMax)
-                    return;
+                bool foundChunkToLoad;
+                int loadChunkX, loadChunkZ;
 
-                int xIndex = Numerical.IntMod(chunkX - ChunkXMin + xStartIndex, Cache_Size);
-                int zIndex = Numerical.IntMod(chunkZ - ChunkZMin + zStartIndex, Cache_Size);
+                FindNeededChunk(out foundChunkToLoad, out loadChunkX, out loadChunkZ);
 
-                cacheIsValid[xIndex, zIndex] = true;
+                if (foundChunkToLoad)
+                    MakeAndCacheChunk(loadChunkX, loadChunkZ);
 
-                if (cachedChunks[xIndex, zIndex] == null)
-                    cachedChunks[xIndex, zIndex] = new Chunk(map.BlockHandler);
-                
-                cachedChunks[xIndex, zIndex].OverwriteChunkDataWith(map, chunkX, chunkZ);
+                Thread.Sleep(10);
             }
         }
+
+        /// <summary>
+        /// If there is a currently un-cached chunk which we need,
+        /// finds it, and returns true and the coordinates.  Otherwise
+        /// returns false.  In terms of precedence, it finds the closest
+        /// needed un-cached chunk to the center.
+        /// </summary>
+        /// <param name="foundChunkToLoad"></param>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        private void FindNeededChunk(out bool foundChunkToLoad, out int chunkX, out int chunkZ)
+        {
+            //start with dumb starter values in case we don't find anything
+            chunkX = 0;
+            chunkZ = 0;
+
+            lock (CacheLock)
+            {
+                int centerX = XMin + Radius;
+                int centerZ = ZMin + Radius;
+
+                int bestScore = int.MaxValue;
+                CacheData bestData = null;
+
+                //find the closest necessary square to the center
+                for (int x = XMin; x <= XMax; x++)
+                {
+                    for (int z = ZMin; z <= ZMax; z++)
+                    {
+                        CacheData tempData = this[x, z];
+                        int score = Math.Abs(x - centerX) + Math.Abs(z - centerZ);
+
+                        if (score < bestScore && tempData.NeedsToBeLoaded)
+                        {
+                            bestScore = score;
+                            bestData = tempData;
+
+                            chunkX = x;
+                            chunkZ = z;
+                        }
+                    }
+                }
+
+                //this is how we know we found something :)
+                foundChunkToLoad = (bestData != null);
+            }
+        }
+
+        /// <summary>
+        /// Part of the helper thread method.  Locates the appropriate
+        /// piece of CacheData, fills it with good data, then marks it
+        /// as prepared.
+        /// </summary>
+        /// <param name="loadChunkX"></param>
+        /// <param name="loadChunkZ"></param>
+        private void MakeAndCacheChunk(int loadChunkX, int loadChunkZ)
+        {
+            CacheData cacheData;
+
+            lock (CacheLock)
+            {
+                cacheData = this[loadChunkX, loadChunkZ];
+                if (cacheData.Chunk == null)
+                    cacheData.Chunk = new Chunk(Map.BlockHandler);
+            }
+
+            cacheData.Chunk.OverwriteChunkDataWith(Map, loadChunkX, loadChunkZ);
+
+            lock (CacheLock)
+            {
+                cacheData.CleanAndValidate();
+            }
+        }
+        #endregion
+
+        #region CacheData Class
+        private class CacheData
+        {
+            public Chunk Chunk;
+            public bool NeedsToBeLoaded;
+            public HashSet<Entity> TouchingEntities;
+
+            private CacheData()
+            {
+            }
+
+            public static CacheData MakeDefault()
+            {
+                CacheData output = new CacheData();
+
+                output.Chunk = null;
+                output.NeedsToBeLoaded = true;
+                output.TouchingEntities = new HashSet<Entity>();
+
+                return output;
+            }
+
+            /// <summary>
+            /// Called when the data in this object is no longer what we
+            /// want it to be.  The arguments are used to determine if we
+            /// really need to mark this as a new task (if it's already
+            /// saved, don't bother, it's just extra work).
+            /// </summary>
+            /// <param name="newChunkX"></param>
+            /// <param name="newChunkZ"></param>
+            /// <param name="cache"></param>
+            public void Invalidate(int newChunkX, int newChunkZ, ChunkCache cache)
+            {
+                if (cache.HasSavedChunk(newChunkX, newChunkZ))
+                    NeedsToBeLoaded = false;
+                else
+                    NeedsToBeLoaded = true;
+
+                TouchingEntities.Clear();
+            }
+
+            /// <summary>
+            /// Called when the data in this object is now (but not previously)
+            /// what we want it to be.
+            /// </summary>
+            public void CleanAndValidate()
+            {
+                TouchingEntities.Clear();
+                NeedsToBeLoaded = false;
+            }
+        }
+        #endregion
     }
 }
