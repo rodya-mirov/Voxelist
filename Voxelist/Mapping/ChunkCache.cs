@@ -495,5 +495,57 @@ namespace Voxelist.Mapping
             }
         }
         #endregion
+
+        #region Entity Collision Caching
+        public void RemoveEntity(Entity entity, int chunkX, int chunkZ)
+        {
+            if (HasSavedChunk(chunkX, chunkZ))
+            {
+                savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Remove(entity);
+            }
+            else if (IsInGridRange(chunkX, chunkZ) && IsReady(chunkX, chunkZ))
+            {
+                this[chunkX, chunkZ].TouchingEntities.Remove(entity);
+            }
+            else
+            {
+                throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+            }
+        }
+
+        public void AddEntity(Entity entity, int chunkX, int chunkZ)
+        {
+            if (HasSavedChunk(chunkX, chunkZ))
+            {
+                savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Add(entity);
+            }
+            else if (IsInGridRange(chunkX, chunkZ) && IsReady(chunkX, chunkZ))
+            {
+                this[chunkX, chunkZ].TouchingEntities.Add(entity);
+            }
+            else
+            {
+                throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+            }
+        }
+
+        public IEnumerable<Entity> TouchedEntities(int chunkX, int chunkZ)
+        {
+            if (HasSavedChunk(chunkX, chunkZ))
+            {
+                foreach (Entity e in savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities)
+                    yield return e;
+            }
+            else if (IsInGridRange(chunkX, chunkZ) && IsReady(chunkX, chunkZ))
+            {
+                foreach (Entity e in this[chunkX, chunkZ].TouchingEntities)
+                    yield return e;
+            }
+            else
+            {
+                throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+            }
+        }
+        #endregion
     }
 }

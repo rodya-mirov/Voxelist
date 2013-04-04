@@ -120,5 +120,38 @@ namespace Voxelist.Utilities
 
             return new BoundingBox(min, max);
         }
+
+        public static void FindChunkBounds(BoundingBox box, ChunkCoordinate startingCoordinates, out ChunkCoordinate min, out ChunkCoordinate max)
+        {
+            min = startingCoordinates;
+            max = startingCoordinates;
+
+            Vector3 boxmin = box.Min;
+            Vector3 boxmax = box.Max;
+
+            while (boxmin.X <= 0)
+            {
+                min.X--;
+                boxmin.X += GameConstants.CHUNK_X_WIDTH;
+            }
+
+            while (boxmin.Z <= 0)
+            {
+                min.Z--;
+                boxmin.Z += GameConstants.CHUNK_Z_LENGTH;
+            }
+
+            while (boxmax.X >= GameConstants.CHUNK_X_WIDTH)
+            {
+                max.X++;
+                boxmax.X -= GameConstants.CHUNK_X_WIDTH;
+            }
+
+            while (boxmax.Z >= GameConstants.CHUNK_Z_LENGTH)
+            {
+                max.Z++;
+                boxmax.Z -= GameConstants.CHUNK_Z_LENGTH;
+            }
+        }
     }
 }

@@ -28,10 +28,12 @@ namespace Voxelist.Entities
         #region Auto-Spawning and -Despawning
         public void AutoSpawn()
         {
+            WorldManager.AddEntityToCache(this);
         }
 
         public void AutoDespawn()
         {
+            WorldManager.RemoveEntityFromCache(this);
         }
 
         public bool ShouldAutoDespawn()
@@ -42,6 +44,8 @@ namespace Voxelist.Entities
             return WorldManager.EntityFarAway(chunkX, chunkZ);
         }
         #endregion
+
+        private WorldPosition _position;
 
         /// <summary>
         /// This represents a "position" for the Entity, including
@@ -57,9 +61,11 @@ namespace Voxelist.Entities
         public WorldPosition Position
         {
             get { return _position; }
-            protected set { _position = value; }
+            protected set
+            {
+                _position = value;
+            }
         }
-        private WorldPosition _position;
 
         /// <summary>
         /// When following this target, you don't necessarily want to sit
@@ -247,7 +253,14 @@ namespace Voxelist.Entities
         {
             Vector3 intendedChange = Velocity * (float)(gametime.ElapsedGameTime.TotalSeconds);
 
-            MoveAndResolveCollisions(intendedChange);
+            if (HasPhysicsInteractions)
+                WorldManager.RemoveEntityFromCache(this);
+
+            LoadPossibleEntityCollisions(intendedChange);
+            MoveAndResolveCollisions(intendedChange); //Position actually changes here
+
+            if (HasPhysicsInteractions)
+                WorldManager.AddEntityToCache(this);
         }
 
         #region Collision Resolution
@@ -273,7 +286,6 @@ namespace Voxelist.Entities
         /// <returns></returns>
         private void MoveAndResolveCollisions(Vector3 intendedChange)
         {
-            loadPossibleEntityCollisions(intendedChange);
 
             bool StartedOnGround = OnGround;
 
@@ -341,19 +353,20 @@ namespace Voxelist.Entities
             Velocity = pv;
         }
 
-        private void loadPossibleEntityCollisions(Vector3 intendedChange)
+        private void LoadPossibleEntityCollisions(Vector3 intendedChange)
         {
             possibleEntityCollisions.Clear();
 
-            BoundingBox bigBox = Numerical.StretchBox(BoundingBox, intendedChange);
-
             if (HasPhysicsInteractions)
             {
-                foreach (Entity other in WorldManager.InteractiveEntities())
+                BoundingBox stretchedBox = Numerical.StretchBox(BoundingBox, intendedChange);
+
+                var touchedEntities = WorldManager.PossibleTouchedEntities(this, stretchedBox);
+
+                foreach (Entity other in touchedEntities)
                 {
                     if (other.IsAWallFor(this))
                         possibleEntityCollisions.Enqueue(new Collider(other));
-
                 }
             }
         }
@@ -368,11 +381,11 @@ namespace Voxelist.Entities
             ZCollidedForward = false;
         }
 
-        private IEnumerable<Collider> Collisions(BoundingBox currentBoundingBox)
+        private IEnumerable<Collider> Collisions(BoundingBox boundingBox)
         {
             if (CollidesWithMapGeometry)
             {
-                foreach (Collider box in WorldManager.IntersectingBlocks(Position.chunkX, Position.chunkZ, currentBoundingBox))
+                foreach (Collider box in WorldManager.IntersectingBlocks(Position.chunkX, Position.chunkZ, boundingBox))
                     yield return box;
             }
 

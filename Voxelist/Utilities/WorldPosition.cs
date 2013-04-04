@@ -29,6 +29,16 @@ namespace Voxelist.Utilities
             }
         }
 
+        public ChunkCoordinate ChunkCoordinate
+        {
+            get { return new ChunkCoordinate(chunkX, chunkZ); }
+            set
+            {
+                chunkX = value.X;
+                chunkZ = value.Z;
+            }
+        }
+
         public static WorldPosition operator +(WorldPosition wp, Vector3 position)
         {
             return new WorldPosition(wp.chunkX, wp.chunkZ, wp.inChunkX + position.X, wp.inChunkY + position.Y, wp.inChunkZ + position.Z);

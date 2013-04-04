@@ -262,16 +262,6 @@ namespace Voxelist.Mapping
         public int CenterChunkZ { get { return Camera.ChunkZ; } }
 
         #region Generated Entity Handling
-        private struct ChunkCoordinate
-        {
-            int X, Z;
-
-            public ChunkCoordinate(int x, int z)
-            {
-                this.X = x;
-                this.Z = z;
-            }
-        }
 
         private TorusBoolArray entitiesLoaded;
 
@@ -512,6 +502,40 @@ namespace Voxelist.Mapping
                     #endregion
 
                     return;
+                }
+            }
+        }
+
+        public void RemoveEntity(Entity entity, ChunkCoordinate min, ChunkCoordinate max)
+        {
+            for (int x = min.X; x <= max.X; x++)
+            {
+                for (int z = min.Z; z <= max.Z; z++)
+                {
+                    chunkCache.RemoveEntity(entity, x, z);
+                }
+            }
+        }
+
+        public void AddEntity(Entity entity, ChunkCoordinate min, ChunkCoordinate max)
+        {
+            for (int x = min.X; x <= max.X; x++)
+            {
+                for (int z = min.Z; z <= max.Z; z++)
+                {
+                    chunkCache.AddEntity(entity, x, z);
+                }
+            }
+        }
+
+        public IEnumerable<Entity> TouchedEntities(ChunkCoordinate min, ChunkCoordinate max)
+        {
+            for (int x = min.X; x <= max.X; x++)
+            {
+                for (int z = min.Z; z <= max.Z; z++)
+                {
+                    foreach (Entity e in chunkCache.TouchedEntities(x, z))
+                        yield return e;
                 }
             }
         }

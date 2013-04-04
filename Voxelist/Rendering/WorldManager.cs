@@ -254,5 +254,30 @@ namespace Voxelist.Rendering
                 out foundBlock, out blockPosition, out faceTouched, out successful);
         }
         #endregion
+
+        public void RemoveEntityFromCache(Entity entity)
+        {
+            ChunkCoordinate min, max;
+            Numerical.FindChunkBounds(entity.BoundingBox, entity.Position.ChunkCoordinate, out min, out max);
+
+            Map.RemoveEntity(entity, min, max);
+        }
+
+        public void AddEntityToCache(Entity entity)
+        {
+            ChunkCoordinate min, max;
+            Numerical.FindChunkBounds(entity.BoundingBox, entity.Position.ChunkCoordinate, out min, out max);
+
+            Map.AddEntity(entity, min, max);
+        }
+
+        public IEnumerable<Entity> PossibleTouchedEntities(Entity starter, BoundingBox boundingBox)
+        {
+            ChunkCoordinate min, max;
+            Numerical.FindChunkBounds(boundingBox, starter.Position.ChunkCoordinate, out min, out max);
+
+            foreach (Entity e in Map.TouchedEntities(min, max))
+                yield return e;
+        }
     }
 }

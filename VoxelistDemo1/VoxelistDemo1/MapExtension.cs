@@ -127,15 +127,14 @@ namespace VoxelistDemo1
             entityDataToFill.Add(new EntitySchema(0, 4, 40, 4));
 
             //4 scenery blocks per chunk
-            /*
             int inc = 8;
-            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x += inc)
+            for (int x = inc / 2; x < GameConstants.CHUNK_X_WIDTH; x += inc)
             {
-                for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z += inc)
+                for (int z = inc / 2; z < GameConstants.CHUNK_Z_LENGTH; z += inc)
                 {
                     entityDataToFill.Add(new EntitySchema(1, x, 100, z));
                 }
-            }//*/
+            }
         }
     }
 }
