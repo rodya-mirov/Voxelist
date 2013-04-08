@@ -16,7 +16,7 @@ namespace VoxelistDemo1
         {
         }
 
-        protected override int ChunkViewDistance
+        public override int ViewRadius
         {
             get { return 7; }
         }

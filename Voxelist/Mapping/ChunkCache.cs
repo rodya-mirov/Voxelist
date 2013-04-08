@@ -6,6 +6,7 @@ using System.Threading;
 using Voxelist.Utilities;
 using Voxelist.Entities;
 using Voxelist.BlockHandling;
+using Voxelist.Rendering;
 
 namespace Voxelist.Mapping
 {
@@ -17,10 +18,15 @@ namespace Voxelist.Mapping
     public class ChunkCache
     {
         private Map Map { get; set; }
+        private BlockHandler BlockHandler { get; set; }
 
-        public ChunkCache(Map map, int cacheRadius)
+        private int EntitySpawnRadius { get { return Map.EntitySpawnRadius; } }
+
+        public ChunkCache(Map map, BlockHandler handler, int cacheRadius)
         {
             this.Map = map;
+            this.BlockHandler = handler;
+
             this.Radius = cacheRadius;
 
             this.savedChunkData = new Dictionary<ChunkCoordinate, CacheData>();
@@ -31,6 +37,36 @@ namespace Voxelist.Mapping
         public void Dispose()
         {
             loaderShouldKeepRunning = false;
+        }
+
+        private int IntendedCenterX { get; set; }
+        private int IntendedCenterZ { get; set; }
+
+        public void ChangeCenterCoordinates(int dx, int dz)
+        {
+            int newCenterX = IntendedCenterX + dx;
+            int newCenterZ = IntendedCenterZ + dz;
+
+            DespawnFarawayChunks(newCenterX, newCenterZ);
+
+            IntendedCenterX = newCenterX;
+            IntendedCenterZ = newCenterZ;
+        }
+
+        private void DespawnFarawayChunks(int newCenterX, int newCenterZ)
+        {
+            for (int x = IntendedCenterX - EntitySpawnRadius; x <= IntendedCenterX + EntitySpawnRadius; x++)
+            {
+                for (int z = IntendedCenterZ - EntitySpawnRadius; z <= IntendedCenterZ + EntitySpawnRadius; z++)
+                {
+                    if (IsInGridRange(x, z) && IsReady(x, z))
+                    {
+                        int dist = Math.Abs(x - newCenterX) + Math.Abs(z - newCenterZ);
+                        if (dist > EntitySpawnRadius)
+                            this[x, z].Despawn();
+                    }
+                }
+            }
         }
 
         #region Grid Data Storage
@@ -54,7 +90,7 @@ namespace Voxelist.Mapping
             {
                 for (int z = 0; z < Height; z++)
                 {
-                    cache[x, z] = CacheData.MakeDefault();
+                    cache[x, z] = new CacheData();
                 }
             }
         }
@@ -234,8 +270,8 @@ namespace Voxelist.Mapping
                     CacheData dat = this[chunkX, chunkZ];
                     savedChunkData[new ChunkCoordinate(chunkX, chunkZ)] = dat;
 
-                    CacheData newData = CacheData.MakeDefault();
-                    newData.NeedsToBeLoaded = false;
+                    CacheData newData = new CacheData();
+                    newData.CleanAndValidate();
                     this[chunkX, chunkZ] = newData;
                     return true;
                 }
@@ -262,8 +298,9 @@ namespace Voxelist.Mapping
             lock (CacheLock)
             {
                 if (HasSavedChunk(chunkX, chunkZ))
+                {
                     return true;
-
+                }
                 if (IsInGridRange(chunkX, chunkZ))
                 {
                     return !this[chunkX, chunkZ].NeedsToBeLoaded;
@@ -304,6 +341,9 @@ namespace Voxelist.Mapping
         {
             XMin = centerChunkX - Radius;
             ZMin = centerChunkZ - Radius;
+
+            IntendedCenterX = centerChunkX;
+            IntendedCenterZ = centerChunkZ;
 
             for (int chunkX = centerChunkX - initialRadius; chunkX <= centerChunkX + initialRadius; chunkX++)
             {
@@ -431,7 +471,7 @@ namespace Voxelist.Mapping
             {
                 cacheData = this[loadChunkX, loadChunkZ];
                 if (cacheData.Chunk == null)
-                    cacheData.Chunk = new Chunk(Map.BlockHandler);
+                    cacheData.GiveBlankChunk(BlockHandler);
             }
 
             cacheData.Chunk.OverwriteChunkDataWith(Map, loadChunkX, loadChunkZ);
@@ -446,23 +486,20 @@ namespace Voxelist.Mapping
         #region CacheData Class
         private class CacheData
         {
-            public Chunk Chunk;
-            public bool NeedsToBeLoaded;
-            public HashSet<Entity> TouchingEntities;
+            public Chunk Chunk { get; private set; }
+            public bool NeedsToBeLoaded { get; private set; }
 
-            private CacheData()
+            public HashSet<Entity> TouchingEntities { get; private set; }
+
+            public bool EntitiesSpawned { get; private set; }
+
+            public CacheData()
             {
-            }
+                Chunk = null;
+                NeedsToBeLoaded = true;
 
-            public static CacheData MakeDefault()
-            {
-                CacheData output = new CacheData();
-
-                output.Chunk = null;
-                output.NeedsToBeLoaded = true;
-                output.TouchingEntities = new HashSet<Entity>();
-
-                return output;
+                EntitiesSpawned = false;
+                TouchingEntities = new HashSet<Entity>();
             }
 
             /// <summary>
@@ -481,6 +518,7 @@ namespace Voxelist.Mapping
                 else
                     NeedsToBeLoaded = true;
 
+                EntitiesSpawned = false;
                 TouchingEntities.Clear();
             }
 
@@ -492,6 +530,22 @@ namespace Voxelist.Mapping
             {
                 TouchingEntities.Clear();
                 NeedsToBeLoaded = false;
+                EntitiesSpawned = false;
+            }
+
+            public void Despawn()
+            {
+                EntitiesSpawned = false;
+            }
+
+            public void Spawn()
+            {
+                EntitiesSpawned = true;
+            }
+
+            public void GiveBlankChunk(BlockHandler BlockHandler)
+            {
+                Chunk = new Chunk(BlockHandler);
             }
         }
         #endregion
@@ -529,7 +583,7 @@ namespace Voxelist.Mapping
             }
         }
 
-        public IEnumerable<Entity> TouchedEntities(int chunkX, int chunkZ)
+        public IEnumerable<Entity> CachedEntities(int chunkX, int chunkZ)
         {
             if (HasSavedChunk(chunkX, chunkZ))
             {
@@ -545,6 +599,27 @@ namespace Voxelist.Mapping
             {
                 throw new IndexOutOfRangeException("Specified chunk is not loaded!");
             }
+        }
+
+        public IEnumerable<Entity> GenerateAvailableEntities(int chunkX, int chunkZ, EntityBuilder builder, WorldManager manager)
+        {
+            //the following is a big block of checks to avoid 
+            if (!IsInGridRange(chunkX, chunkZ) || !IsReady(chunkX, chunkZ))
+                yield break;
+
+            int dist = Math.Abs(chunkX - IntendedCenterX) + Math.Abs(chunkZ - IntendedCenterZ);
+            if (dist > EntitySpawnRadius)
+                yield break;
+
+            CacheData dat = this[chunkX, chunkZ];
+
+            if (dat.EntitiesSpawned)
+                yield break;
+
+            dat.Spawn();
+
+            foreach (Entity e in dat.Chunk.MakeGeneratedEntities(builder, manager))
+                yield return e;
         }
         #endregion
     }

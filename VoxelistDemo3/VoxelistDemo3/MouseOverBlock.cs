@@ -151,11 +151,11 @@ namespace VoxelistDemo3
                     break;
 
                 case Face.FRONT:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ + 1);
+                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ - 1);
                     break;
 
                 case Face.BACK:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ - 1);
+                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ + 1);
                     break;
 
                 default: throw new NotImplementedException();

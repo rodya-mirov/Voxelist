@@ -12,64 +12,52 @@ namespace Voxelist.Mapping
 {
     public abstract class Map
     {
-        public BlockHandler BlockHandler { get; protected set; }
-        private int startCenterChunkX, startCenterChunkZ;
+        #region Properties and Fields
+        /// <summary>
+        /// The BlockHandler which affects and afflicts all methods
+        /// involved in the creation and upkeep of this Map.
+        /// </summary>
+        private BlockHandler BlockHandler { get; set; }
 
+        /// <summary>
+        /// The current Center Chunk coordinate (X) of this Map.
+        /// Typically tied to the Chunk position of the Camera,
+        /// though they should not be assumed to be always equal.
+        /// </summary>
+        public int CenterChunkX { get; private set; }
+        
+        /// <summary>
+        /// The current Center Chunk coordinate (Z) of this Map.
+        /// Typically tied to the Chunk position of the Camera,
+        /// though they should not be assumed to be always equal.
+        /// </summary>
+        public int CenterChunkZ { get; private set; }
+        #endregion
+
+        #region Constructors
+        /// <summary>
+        /// Constructs a new map.  Requires a BlockHandler to get things done, as well as
+        /// a starting center position to begin caching from.
+        /// </summary>
+        /// <param name="handler"></param>
+        /// <param name="startCenterChunkX"></param>
+        /// <param name="startCenterChunkZ"></param>
         public Map(BlockHandler handler, int startCenterChunkX, int startCenterChunkZ)
         {
             this.BlockHandler = handler;
 
-            chunkCache = new ChunkCache(this, CacheRadius);
+            this.CenterChunkX = startCenterChunkX;
+            this.CenterChunkZ = startCenterChunkZ;
 
-            lastCenterX = CenterChunkX;
-            lastCenterZ = CenterChunkZ;
-
-            this.startCenterChunkX = startCenterChunkX;
-            this.startCenterChunkZ = startCenterChunkZ;
+            this.Cache = new ChunkCache(this, handler, CacheRadius);
         }
+        #endregion
 
-        public void LoadContent(Game game)
-        {
-            chunkCache.StartCaching(startCenterChunkX, startCenterChunkZ, StartingChunkRadiusToLoad);
-
-            setupEntityGeneration();
-        }
-
-        private int lastCenterX, lastCenterZ;
-
-        public virtual void Update(GameTime gametime)
-        {
-            int dx = CenterChunkX - lastCenterX;
-            int dz = CenterChunkZ - lastCenterZ;
-
-            if (dx != 0 || dz != 0)
-                CenterChanged(dx, dz);
-
-            lastCenterX = CenterChunkX;
-            lastCenterZ = CenterChunkZ;
-        }
-
-        private void CenterChanged(int dx, int dz)
-        {
-            entitiesLoaded.AdjustRange(dx, dz);
-        }
-
-        public void Dispose()
-        {
-            chunkCache.Dispose();
-        }
-
+        #region Procedural Generation
         /// <summary>
         /// This is where you get to do your procedural generation!
         /// By whatever means you deem appropriate, construct a chunk
-        /// of cubes at the designated "chunk coordinates;" if you
-        /// prefer "cube" coordinates, multiply by Chunk.CHUNK_WIDTH_CUBES
-        /// and Chunk.CHUNK_LENGTH_CUBES for the corner.
-        /// 
-        /// NOTE: Coordinates must be in the form (x,y,z), where x is
-        /// the "side-side" dimension, z is the "forward-backward" dimension,
-        /// and y is the "up-down" dimension.  This coordinate system
-        /// doesn't always feel natural!
+        /// of cubes at the designated "chunk coordinates."
         /// 
         /// FUN FACT: you need to include a "buffer block" on each lateral
         /// (that is, x or z) side.  It is important that this is the same
@@ -80,8 +68,218 @@ namespace Voxelist.Mapping
         /// <param name="chunkBlocksToFill">The array to fill with block data</param>
         /// <returns></returns>
         public abstract void MakeChunkData(int chunkX, int chunkZ, Block[, ,] chunkBlocksToFill, List<EntitySchema> entityListToFill);
+        #endregion
 
-        #region Physics
+        #region Upkeep Methods
+        /// <summary>
+        /// Loads Content for the Map.  Default behavior starts the Caching and is
+        /// pretty necessary!  So, overrides should call the base method.
+        /// </summary>
+        /// <param name="game"></param>
+        public virtual void LoadContent(Game game)
+        {
+            Cache.StartCaching(CenterChunkX, CenterChunkZ, StartingChunkRadiusToLoad);
+        }
+
+        /// <summary>
+        /// Disposes the Map.  Not empty, so overrides should call the base method.
+        /// </summary>
+        public virtual void Dispose()
+        {
+            Cache.Dispose();
+        }
+
+        /// <summary>
+        /// Updates the map.  Default behavior is used for Entity
+        /// management, so overrides should call the base method.
+        /// </summary>
+        /// <param name="gametime"></param>
+        public virtual void Update(GameTime gametime)
+        {
+            int dx = Camera.ChunkX - CenterChunkX;
+            int dz = Camera.ChunkZ - CenterChunkZ;
+
+            if (dx != 0 || dz != 0)
+            {
+                CenterChanged(dx, dz);
+                CenterChunkX += dx;
+                CenterChunkZ += dz;
+            }
+        }
+
+        private void CenterChanged(int dx, int dz)
+        {
+            Cache.ChangeCenterCoordinates(dx, dz);
+        }
+        #endregion
+
+        #region Caching
+        /// <summary>
+        /// The Cache object which does all the real content management.
+        /// </summary>
+        private ChunkCache Cache;
+
+        /// <summary>
+        /// How many squares away from, and not including, the center square
+        /// to keep loaded at a time.  The default is ViewRadius+1, and the
+        /// only other obvious choice would be ViewRadius (if cache loading
+        /// becomes a major performance problem, but this will result in
+        /// obvious load times).
+        /// 
+        /// Note this should be constant throughout gameplay; the engine does not
+        /// take into account changes to this, and may behave strangely if you do.
+        /// </summary>
+        protected virtual int CacheRadius { get { return ViewRadius + 1; } }
+
+        /// <summary>
+        /// How much of the Map to generate before play can start.  This is
+        /// set to 1, which means load the current center square and one more
+        /// in every direction.
+        /// </summary>
+        private int StartingChunkRadiusToLoad { get { return 1; } }
+
+        /// <summary>
+        /// Gets the Chunk located at the specified CHUNK coordinates.
+        /// This generates new chunks as rarely as possible.  The urgent
+        /// flag indicates whether or not "no chunk" is an acceptable answer
+        /// (urgent means you really really need the chunk, otherwise
+        /// return null as convenient).
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkY"></param>
+        /// <returns></returns>
+        public Chunk GetChunk(int chunkX, int chunkZ, bool urgent)
+        {
+            if (Cache.IsReady(chunkX, chunkZ))
+                return Cache.GetChunk(chunkX, chunkZ);
+
+            else if (urgent)
+            {
+                Cache.ForceAddChunk(chunkX, chunkZ);
+                return Cache.GetChunk(chunkX, chunkZ);
+            }
+
+            else
+                return null;
+        }
+
+        private Block GetHighPriorityBlock(int chunkX, int chunkZ, int cubeX, int cubeY, int cubeZ)
+        {
+            Numerical.RepairBlockCoordinates(ref chunkX, ref chunkZ, ref cubeX, ref cubeZ);
+
+            return GetChunk(chunkX, chunkZ, true)[cubeX, cubeY, cubeZ];
+        }
+        #endregion
+
+        #region Rendering
+        /// <summary>
+        /// The distance from the Center (not including the Center) at which
+        /// Chunks are visible and drawn.
+        /// 
+        /// Note this should be constant throughout gameplay; the engine does not
+        /// take into account changes to this, and may behave strangely if you do.
+        /// </summary>
+        public abstract int ViewRadius { get; }
+
+        /// <summary>
+        /// Draws the Map using the data from the Camera.
+        /// </summary>
+        public void Draw()
+        {
+            int centerChunkX = CenterChunkX;
+            int centerChunkZ = CenterChunkZ;
+
+            Vector3 translation = Vector3.Zero;
+
+            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
+            {
+                for (int chunkOffsetX = -ViewRadius; chunkOffsetX <= ViewRadius; chunkOffsetX++)
+                {
+                    translation.X = chunkOffsetX * GameConstants.CHUNK_X_WIDTH;
+
+                    for (int chunkOffsetZ = -ViewRadius; chunkOffsetZ <= ViewRadius; chunkOffsetZ++)
+                    {
+                        translation.Z = chunkOffsetZ * GameConstants.CHUNK_Z_LENGTH;
+
+                        int chunkX = chunkOffsetX + centerChunkX;
+                        int chunkZ = chunkOffsetZ + centerChunkZ;
+
+                        Chunk drawableChunk = GetChunk(chunkX, chunkZ, false);
+
+                        if (drawableChunk != null)
+                            drawableChunk.Draw(translation, textureIndex);
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region Generated Entity Management
+        /// <summary>
+        /// The range at which generated Entities are spawned (that is, come
+        /// into existence, instead of being inert schemas on the Chunks). This
+        /// should be at most the ViewDistance, certainly, but could be less for
+        /// performance reasons (depending on the number of Entities you have,
+        /// and your ViewDistance).
+        /// 
+        /// Note this should be constant throughout gameplay; the engine does not
+        /// take into account changes to this, and may behave strangely if you do.
+        /// </summary>
+        public abstract int EntitySpawnRadius { get; }
+
+        /// <summary>
+        /// Generates all available (that is, within spawn range but not yet spawned)
+        /// entities.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Entity> GenerateAllAvailableEntities(EntityBuilder builder, WorldManager manager)
+        {
+            for (int x = CenterChunkX - EntitySpawnRadius; x <= CenterChunkX + EntitySpawnRadius; x++)
+            {
+                for (int z = CenterChunkZ - EntitySpawnRadius; z <= CenterChunkZ + EntitySpawnRadius; z++)
+                {
+                    foreach (Entity e in Cache.GenerateAvailableEntities(x, z, builder, manager))
+                        yield return e;
+                }
+            }
+        }
+
+        public void AddEntityToCache(Entity e, ChunkCoordinate chunkMin, ChunkCoordinate chunkMax)
+        {
+            for (int x = chunkMin.X; x <= chunkMax.X; x++)
+            {
+                for (int z = chunkMin.Z; z <= chunkMax.Z; z++)
+                {
+                    Cache.AddEntity(e, x, z);
+                }
+            }
+        }
+
+        public void RemoveEntityFromCache(Entity e, ChunkCoordinate chunkMin, ChunkCoordinate chunkMax)
+        {
+            for (int x = chunkMin.X; x <= chunkMax.X; x++)
+            {
+                for (int z = chunkMin.Z; z <= chunkMax.Z; z++)
+                {
+                    Cache.RemoveEntity(e, x, z);
+                }
+            }
+        }
+
+        public IEnumerable<Entity> CachedEntities(ChunkCoordinate chunkMin, ChunkCoordinate chunkMax)
+        {
+            for (int x = chunkMin.X; x <= chunkMax.X; x++)
+            {
+                for (int z = chunkMin.Z; z <= chunkMax.Z; z++)
+                {
+                    foreach (Entity e in Cache.CachedEntities(x, z))
+                        yield return e;
+                }
+            }
+        }
+        #endregion
+
+        #region Physics-like Methods
         /// <summary>
         /// This enumerates all boundingboxes of blocks on the map which actually do intersect
         /// the given boundingbox.  Only returns boxes of blocks which are not passable of course.
@@ -117,189 +315,6 @@ namespace Voxelist.Mapping
                 }
             }
         }
-        #endregion
-
-        #region Caching
-        private ChunkCache chunkCache;
-
-        protected virtual int StartingChunkRadiusToLoad { get { return 1; } }
-
-        /// <summary>
-        /// Make sure this is higher than the ViewDistance!
-        /// </summary>
-        private int CacheRadius { get { return ChunkViewDistance; } }
-
-        /// <summary>
-        /// Gets the Chunk located at the specified CHUNK coordinates.
-        /// This generates new chunks as rarely as possible.  The urgent
-        /// flag indicates whether or not "no chunk" is an acceptable answer
-        /// (urgent means you really really need the chunk, otherwise
-        /// return null as convenient).
-        /// </summary>
-        /// <param name="chunkX"></param>
-        /// <param name="chunkY"></param>
-        /// <returns></returns>
-        public Chunk GetChunk(int chunkX, int chunkZ, bool urgent)
-        {
-            if (chunkCache.IsReady(chunkX, chunkZ))
-                return chunkCache.GetChunk(chunkX, chunkZ);
-            else if (urgent)
-            {
-                chunkCache.ForceAddChunk(chunkX, chunkZ);
-                return chunkCache.GetChunk(chunkX, chunkZ);
-            }
-            else
-                return null;
-        }
-
-        /// <summary>
-        /// This saves the specified chunk.  The only way it can fail is
-        /// if the specified chunk is not actually loaded; so it returns
-        /// false precisely when it successfully saves the chunk.
-        /// </summary>
-        /// <param name="chunkX"></param>
-        /// <param name="chunkZ"></param>
-        /// <returns></returns>
-        public bool SaveChunk(int chunkX, int chunkZ)
-        {
-            if (chunkCache.IsReady(chunkX, chunkZ))
-            {
-                chunkCache.SaveChunk(chunkX, chunkZ);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Gets the block at a specified coordinate.  This is a "high priority" get, which
-        /// means if the chunk isn't in cache, it will construct it immediately anyway.  This
-        /// usually destroys performance, but what can be done?
-        /// </summary>
-        /// <param name="chunkX"></param>
-        /// <param name="chunkZ"></param>
-        /// <param name="cubeX"></param>
-        /// <param name="cubeY"></param>
-        /// <param name="cubeZ"></param>
-        /// <returns></returns>
-        protected Block GetHighPriorityBlock(int chunkX, int chunkZ, int cubeX, int cubeY, int cubeZ)
-        {
-            while (cubeX < 0)
-            {
-                chunkX--;
-                cubeX += GameConstants.CHUNK_X_WIDTH;
-            }
-
-            while (cubeX >= GameConstants.CHUNK_X_WIDTH)
-            {
-                chunkX++;
-                cubeX -= GameConstants.CHUNK_X_WIDTH;
-            }
-
-            while (cubeZ < 0)
-            {
-                chunkZ--;
-                cubeZ += GameConstants.CHUNK_Z_LENGTH;
-            }
-
-            while (cubeZ >= GameConstants.CHUNK_Z_LENGTH)
-            {
-                chunkZ++;
-                cubeZ -= GameConstants.CHUNK_Z_LENGTH;
-            }
-
-            return GetChunk(chunkX, chunkZ, true)[cubeX, cubeY, cubeZ];
-        }
-        #endregion
-
-        #region Drawing
-
-        /// <summary>
-        /// How many chunks off in the distance you can see.
-        /// If this changes, should call 
-        /// chunkCache.SetDimensions(2*ChunkViewDistance+3)
-        /// </summary>
-        protected abstract int ChunkViewDistance { get; }
-
-        public void Draw()
-        {
-            int centerChunkX = CenterChunkX;
-            int centerChunkZ = CenterChunkZ;
-
-            Vector3 translation = Vector3.Zero;
-
-            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
-            {
-                for (int chunkOffsetX = -ChunkViewDistance; chunkOffsetX <= ChunkViewDistance; chunkOffsetX++)
-                {
-                    translation.X = chunkOffsetX * GameConstants.CHUNK_X_WIDTH;
-
-                    for (int chunkOffsetZ = -ChunkViewDistance; chunkOffsetZ <= ChunkViewDistance; chunkOffsetZ++)
-                    {
-                        translation.Z = chunkOffsetZ * GameConstants.CHUNK_Z_LENGTH;
-
-                        int chunkX = chunkOffsetX + centerChunkX;
-                        int chunkZ = chunkOffsetZ + centerChunkZ;
-
-                        Chunk toDraw = GetChunk(chunkX, chunkZ, false);
-
-                        if (toDraw != null)
-                        {
-                            toDraw.Draw(translation, textureIndex);
-
-                            if (toDraw.chunkX != chunkX || toDraw.chunkZ != chunkZ)
-                                throw new NotImplementedException();
-                        }
-                    }
-                }
-            }
-        }
-        #endregion
-
-        public int CenterChunkX { get { return Camera.ChunkX; } }
-        public int CenterChunkZ { get { return Camera.ChunkZ; } }
-
-        #region Generated Entity Handling
-
-        private TorusBoolArray entitiesLoaded;
-
-        private void setupEntityGeneration()
-        {
-            entitiesLoaded = new TorusBoolArray(EntitySpawnRadius, CenterChunkX, CenterChunkZ, false);
-        }
-
-        public IEnumerable<Entity> GenerateAllAvailableEntities(EntityBuilder builder, WorldManager manager)
-        {
-            for (int dx = -EntitySpawnRadius; dx <= EntitySpawnRadius; dx++)
-            {
-                for (int dz = -EntitySpawnRadius; dz <= EntitySpawnRadius; dz++)
-                {
-                    int chunkX = CenterChunkX + dx;
-                    int chunkZ = CenterChunkZ + dz;
-
-                    if (entitiesLoaded[chunkX, chunkZ])
-                        continue;
-
-                    Chunk chunk = GetChunk(chunkX, chunkZ, false);
-                    if (chunk == null)
-                        continue;
-
-                    entitiesLoaded[chunkX, chunkZ] = true;
-
-                    if (chunk.chunkX != chunkX || chunk.chunkZ != chunkZ)
-                        throw new InvalidOperationException();
-
-                    foreach (Entity entity in chunk.MakeGeneratedEntities(builder, manager))
-                        yield return entity;
-                }
-            }
-        }
-
-        public virtual int EntitySpawnRadius { get { return ChunkViewDistance; } }
-        public int EntityDespawnRadius { get { return EntitySpawnRadius + 1; } }
-        #endregion
 
         /// <summary>
         /// This takes as input a position and a Ray and a maximum distance, then finds
@@ -505,39 +520,6 @@ namespace Voxelist.Mapping
                 }
             }
         }
-
-        public void RemoveEntity(Entity entity, ChunkCoordinate min, ChunkCoordinate max)
-        {
-            for (int x = min.X; x <= max.X; x++)
-            {
-                for (int z = min.Z; z <= max.Z; z++)
-                {
-                    chunkCache.RemoveEntity(entity, x, z);
-                }
-            }
-        }
-
-        public void AddEntity(Entity entity, ChunkCoordinate min, ChunkCoordinate max)
-        {
-            for (int x = min.X; x <= max.X; x++)
-            {
-                for (int z = min.Z; z <= max.Z; z++)
-                {
-                    chunkCache.AddEntity(entity, x, z);
-                }
-            }
-        }
-
-        public IEnumerable<Entity> TouchedEntities(ChunkCoordinate min, ChunkCoordinate max)
-        {
-            for (int x = min.X; x <= max.X; x++)
-            {
-                for (int z = min.Z; z <= max.Z; z++)
-                {
-                    foreach (Entity e in chunkCache.TouchedEntities(x, z))
-                        yield return e;
-                }
-            }
-        }
+        #endregion
     }
 }

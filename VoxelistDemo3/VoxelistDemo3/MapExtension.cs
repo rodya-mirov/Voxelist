@@ -16,9 +16,14 @@ namespace VoxelistDemo3
         {
         }
 
-        protected override int ChunkViewDistance
+        public override int ViewRadius
         {
             get { return 13; }
+        }
+
+        public override int EntitySpawnRadius
+        {
+            get { return 5; }
         }
 
         public override void MakeChunkData(int cx, int cz, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)

@@ -16,7 +16,12 @@ namespace VoxelistDemo2
         {
         }
 
-        protected override int ChunkViewDistance
+        public override int ViewRadius
+        {
+            get { return 6; }
+        }
+
+        public override int EntitySpawnRadius
         {
             get { return 6; }
         }

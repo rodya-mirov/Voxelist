@@ -98,8 +98,8 @@
     <Compile Include="Entities\EntityBuilder.cs" />
     <Compile Include="Entities\EntitySchema.cs" />
     <Compile Include="Utilities\ChunkCoordinate.cs" />
+    <Compile Include="Utilities\HelperMethods.cs" />
     <Compile Include="Utilities\RandomHelper.cs" />
-    <Compile Include="Utilities\TorusBoolArray.cs" />
     <Compile Include="VoxelistGame.cs" />
     <Compile Include="Rendering\Camera.cs" />
     <Compile Include="Entities\Entity.cs" />

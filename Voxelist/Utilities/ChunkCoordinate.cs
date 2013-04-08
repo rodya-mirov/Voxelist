@@ -17,7 +17,7 @@ namespace Voxelist.Utilities
 
         public bool Equals(ChunkCoordinate other)
         {
-            return this == other;
+            return other.X == this.X && other.Z == this.Z;
         }
 
         public override bool Equals(object o)

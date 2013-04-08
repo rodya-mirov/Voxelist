@@ -359,7 +359,7 @@ namespace Voxelist.Entities
 
             if (HasPhysicsInteractions)
             {
-                BoundingBox stretchedBox = Numerical.StretchBox(BoundingBox, intendedChange);
+                BoundingBox stretchedBox = HelperMethods.StretchBox(BoundingBox, intendedChange);
 
                 var touchedEntities = WorldManager.PossibleTouchedEntities(this, stretchedBox);
 
@@ -439,7 +439,7 @@ namespace Voxelist.Entities
                 default: throw new NotImplementedException();
             }
             changeVector *= relevantChange + SIGNED_EPSILON / 2.0f;
-            BoundingBox stretchedBox = Numerical.StretchBox(unmovedBox, changeVector);
+            BoundingBox stretchedBox = HelperMethods.StretchBox(unmovedBox, changeVector);
 
             foreach (Collider collider in Collisions(stretchedBox))
             {

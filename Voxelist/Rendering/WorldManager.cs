@@ -128,7 +128,7 @@ namespace Voxelist.Rendering
                 }
             }
 
-            Numerical.Swap(ref toUpdate, ref backupEntityQueue);
+            HelperMethods.Swap(ref toUpdate, ref backupEntityQueue);
         }
 
         protected override void Dispose(bool disposing)
@@ -171,7 +171,7 @@ namespace Voxelist.Rendering
                 Math.Abs(chunkX - CenterChunkX),
                 Math.Abs(chunkZ - CenterChunkZ));
 
-            return dist >= Map.EntityDespawnRadius;
+            return dist > Map.EntitySpawnRadius;
         }
 
         /// <summary>
@@ -258,25 +258,25 @@ namespace Voxelist.Rendering
         public void RemoveEntityFromCache(Entity entity)
         {
             ChunkCoordinate min, max;
-            Numerical.FindChunkBounds(entity.BoundingBox, entity.Position.ChunkCoordinate, out min, out max);
+            HelperMethods.FindChunkBounds(entity.BoundingBox, entity.Position.ChunkCoordinate, out min, out max);
 
-            Map.RemoveEntity(entity, min, max);
+            Map.RemoveEntityFromCache(entity, min, max);
         }
 
         public void AddEntityToCache(Entity entity)
         {
             ChunkCoordinate min, max;
-            Numerical.FindChunkBounds(entity.BoundingBox, entity.Position.ChunkCoordinate, out min, out max);
+            HelperMethods.FindChunkBounds(entity.BoundingBox, entity.Position.ChunkCoordinate, out min, out max);
 
-            Map.AddEntity(entity, min, max);
+            Map.AddEntityToCache(entity, min, max);
         }
 
         public IEnumerable<Entity> PossibleTouchedEntities(Entity starter, BoundingBox boundingBox)
         {
             ChunkCoordinate min, max;
-            Numerical.FindChunkBounds(boundingBox, starter.Position.ChunkCoordinate, out min, out max);
+            HelperMethods.FindChunkBounds(boundingBox, starter.Position.ChunkCoordinate, out min, out max);
 
-            foreach (Entity e in Map.TouchedEntities(min, max))
+            foreach (Entity e in Map.CachedEntities(min, max))
                 yield return e;
         }
     }

@@ -8,13 +8,6 @@ namespace Voxelist.Utilities
 {
     public static class Numerical
     {
-        public static void Swap<E>(ref E a, ref E b)
-        {
-            E temp = a;
-            a = b;
-            b = temp;
-        }
-
         /// <summary>
         /// Finds the "sign" of x; that is, 0 if x is 0,
         /// -1 if x is negative, or 1 if x is positive.
@@ -23,12 +16,16 @@ namespace Voxelist.Utilities
         /// <returns></returns>
         public static int sign(float x)
         {
+            /*
             if (x == 0)
                 return 0;
             else if (x < 0)
                 return -1;
             else
                 return 1;
+             */
+
+            return (x == 0 ? 0 : (x > 0 ? 1 : -1));
         }
 
         /// <summary>
@@ -91,66 +88,31 @@ namespace Voxelist.Utilities
             return (r * y > x) ? r - 1 : r;
         }
 
-        /// <summary>
-        /// Makes a minimal bounding box which contains both the given box and its
-        /// translate by the given vector.
-        /// </summary>
-        /// <param name="BoundingBox"></param>
-        /// <param name="intendedChange"></param>
-        /// <returns></returns>
-        public static BoundingBox StretchBox(BoundingBox BoundingBox, Vector3 intendedChange)
+
+        public static void RepairBlockCoordinates(ref int chunkX, ref int chunkZ, ref int cubeX, ref int cubeZ)
         {
-            Vector3 min = BoundingBox.Min;
-            Vector3 max = BoundingBox.Max;
-
-            if (intendedChange.X < 0)
-                min.X += intendedChange.X;
-            else
-                max.X += intendedChange.X;
-
-            if (intendedChange.Y < 0)
-                min.Y += intendedChange.Y;
-            else
-                max.Y += intendedChange.Y;
-
-            if (intendedChange.Z < 0)
-                min.Z += intendedChange.Z;
-            else
-                max.Z += intendedChange.Z;
-
-            return new BoundingBox(min, max);
-        }
-
-        public static void FindChunkBounds(BoundingBox box, ChunkCoordinate startingCoordinates, out ChunkCoordinate min, out ChunkCoordinate max)
-        {
-            min = startingCoordinates;
-            max = startingCoordinates;
-
-            Vector3 boxmin = box.Min;
-            Vector3 boxmax = box.Max;
-
-            while (boxmin.X <= 0)
+            while (cubeX < 0)
             {
-                min.X--;
-                boxmin.X += GameConstants.CHUNK_X_WIDTH;
+                chunkX--;
+                cubeX += GameConstants.CHUNK_X_WIDTH;
             }
 
-            while (boxmin.Z <= 0)
+            while (cubeX >= GameConstants.CHUNK_X_WIDTH)
             {
-                min.Z--;
-                boxmin.Z += GameConstants.CHUNK_Z_LENGTH;
+                chunkX++;
+                cubeX -= GameConstants.CHUNK_X_WIDTH;
             }
 
-            while (boxmax.X >= GameConstants.CHUNK_X_WIDTH)
+            while (cubeZ < 0)
             {
-                max.X++;
-                boxmax.X -= GameConstants.CHUNK_X_WIDTH;
+                chunkZ--;
+                cubeZ += GameConstants.CHUNK_Z_LENGTH;
             }
 
-            while (boxmax.Z >= GameConstants.CHUNK_Z_LENGTH)
+            while (cubeZ >= GameConstants.CHUNK_Z_LENGTH)
             {
-                max.Z++;
-                boxmax.Z -= GameConstants.CHUNK_Z_LENGTH;
+                chunkZ++;
+                cubeZ -= GameConstants.CHUNK_Z_LENGTH;
             }
         }
     }
