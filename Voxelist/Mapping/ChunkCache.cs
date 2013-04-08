@@ -59,7 +59,7 @@ namespace Voxelist.Mapping
             {
                 for (int z = IntendedCenterZ - EntitySpawnRadius; z <= IntendedCenterZ + EntitySpawnRadius; z++)
                 {
-                    if (IsInGridRange(x, z) && IsReady(x, z))
+                    if (IsReady(x, z))
                     {
                         int dist = Math.Abs(x - newCenterX) + Math.Abs(z - newCenterZ);
                         if (dist > EntitySpawnRadius)
@@ -476,7 +476,24 @@ namespace Voxelist.Mapping
             lock (CacheLock)
             {
                 cacheData.CleanAndValidate();
+
+                reloadVisualDataForNeighbors(loadChunkX, loadChunkZ);
             }
+        }
+
+        private void reloadVisualDataForNeighbors(int chunkX, int chunkZ)
+        {
+            if (IsReady(chunkX - 1, chunkZ))
+                this[chunkX - 1, chunkZ].Chunk.RecalculateVisualGeometry();
+
+            if (IsReady(chunkX + 1, chunkZ))
+                this[chunkX + 1, chunkZ].Chunk.RecalculateVisualGeometry();
+
+            if (IsReady(chunkX, chunkZ - 1))
+                this[chunkX, chunkZ - 1].Chunk.RecalculateVisualGeometry();
+
+            if (IsReady(chunkX, chunkZ + 1))
+                this[chunkX, chunkZ + 1].Chunk.RecalculateVisualGeometry();
         }
         #endregion
 
@@ -554,7 +571,7 @@ namespace Voxelist.Mapping
             {
                 savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Remove(entity);
             }
-            else if (IsInGridRange(chunkX, chunkZ) && IsReady(chunkX, chunkZ))
+            else if (IsReady(chunkX, chunkZ))
             {
                 this[chunkX, chunkZ].TouchingEntities.Remove(entity);
             }
@@ -570,7 +587,7 @@ namespace Voxelist.Mapping
             {
                 savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Add(entity);
             }
-            else if (IsInGridRange(chunkX, chunkZ) && IsReady(chunkX, chunkZ))
+            else if (IsReady(chunkX, chunkZ))
             {
                 this[chunkX, chunkZ].TouchingEntities.Add(entity);
             }
@@ -587,7 +604,7 @@ namespace Voxelist.Mapping
                 foreach (Entity e in savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities)
                     yield return e;
             }
-            else if (IsInGridRange(chunkX, chunkZ) && IsReady(chunkX, chunkZ))
+            else if (IsReady(chunkX, chunkZ))
             {
                 foreach (Entity e in this[chunkX, chunkZ].TouchingEntities)
                     yield return e;
@@ -601,7 +618,7 @@ namespace Voxelist.Mapping
         public IEnumerable<Entity> GenerateAvailableEntities(int chunkX, int chunkZ, EntityBuilder builder, WorldManager manager)
         {
             //the following is a big block of checks to avoid 
-            if (!IsInGridRange(chunkX, chunkZ) || !IsReady(chunkX, chunkZ))
+            if (!IsReady(chunkX, chunkZ))
                 yield break;
 
             int dist = Math.Abs(chunkX - IntendedCenterX) + Math.Abs(chunkZ - IntendedCenterZ);
