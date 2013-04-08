@@ -343,9 +343,6 @@ namespace Voxelist.Mapping
             out Block foundBlock, out Point3 blockPosition,
             out Face faceTouched, out bool successful)
         {
-            if (!requireVisible && !requireImpassable)
-                throw new ArgumentException("I have to have something to clip!  Must have either \"requireVisible\" or \"requireImpassable\" to be true!");
-
             if (lookRay.Position.Y < 0 || lookRay.Position.Y >= GameConstants.CHUNK_Y_HEIGHT)
                 throw new ArgumentException("Can't cast rays from offscreen!");
 
@@ -442,83 +439,64 @@ namespace Voxelist.Mapping
                 //We either hit a corner (yielding multiple matches) or ran off
                 //the edge of the world.  In either case, I'm OK with "no result."
                 if (hits != 1)
-                {
                     return;
-                }
 
                 foundBlock = GetHighPriorityBlock(chunkX, chunkZ, blockPosition.X, blockPosition.Y, blockPosition.Z);
 
-                bool compatible = true;
-
-                if (requireVisible)
-                {
-                    if (BlockHandler.IsVisible(foundBlock))
-                    {
-                        BoundingBox visualBox = BlockHandler.VisualBoundingBox(foundBlock);
-                        visualBox = new BoundingBox(
-                            visualBox.Min + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z),
-                            visualBox.Max + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z));
-                        compatible = compatible && visualBox.Intersects(lookRay).HasValue;
-                    }
-                    else
-                    {
-                        compatible = false;
-                    }
-                }
-
-                if (true)
-                {
-                }
-
-                if (requireImpassable)
-                {
-                    if (BlockHandler.IsPassable(foundBlock))
-                    {
-                        compatible = false;
-                    }
-                    else
-                    {
-                        BoundingBox blockingBox = BlockHandler.PhysicalBlockingBox(foundBlock);
-                        blockingBox = new BoundingBox(
-                            blockingBox.Min + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z),
-                            blockingBox.Max + new Vector3(blockBounds.Min.X, blockBounds.Min.Y, blockBounds.Min.Z));
-                        compatible = compatible && blockingBox.Intersects(lookRay).HasValue;
-                    }
-                }
-
-                if (compatible)
+                if (BlockLookedAt_TestCompatibility(lookRay, requireVisible, requireImpassable, foundBlock, blockBounds))
                 {
                     successful = true;
-
-                    #region Fix indexing...
-                    while (blockPosition.X < 0)
-                    {
-                        blockPosition.X += GameConstants.CHUNK_X_WIDTH;
-                        chunkX--;
-                    }
-
-                    while (blockPosition.X >= GameConstants.CHUNK_X_WIDTH)
-                    {
-                        blockPosition.X -= GameConstants.CHUNK_X_WIDTH;
-                        chunkX++;
-                    }
-
-                    while (blockPosition.Z < 0)
-                    {
-                        blockPosition.Z += GameConstants.CHUNK_Z_LENGTH;
-                        chunkZ--;
-                    }
-
-                    while (blockPosition.Z >= GameConstants.CHUNK_Z_LENGTH)
-                    {
-                        blockPosition.Z -= GameConstants.CHUNK_Z_LENGTH;
-                        chunkZ++;
-                    }
-                    #endregion
+                    HelperMethods.FixCoordinates(ref chunkX, ref chunkZ, ref blockPosition);
 
                     return;
                 }
             }
+        }
+
+        /// <summary>
+        /// Helper method for "BlockLookedAt."  Determines whether or not the Block we found fits the requirements
+        /// for a successful "find."  Specifically, if "RequireImpassible" is true, then it checks for intersection
+        /// with the passability bounding box, and if "RequireVisible" is true, then it checks for intersection with
+        /// the visibility bounding box.
+        /// </summary>
+        /// <param name="lookRay"></param>
+        /// <param name="requireVisible"></param>
+        /// <param name="requireImpassable"></param>
+        /// <param name="foundBlock"></param>
+        /// <param name="blockBounds"></param>
+        /// <returns></returns>
+        private bool BlockLookedAt_TestCompatibility(Ray lookRay, bool requireVisible, bool requireImpassable,
+            Block foundBlock, BoundingBox blockBounds)
+        {
+            bool compatible = true;
+
+            if (requireVisible)
+            {
+                if (BlockHandler.IsVisible(foundBlock))
+                {
+                    BoundingBox visualBox = HelperMethods.TranslateBox(BlockHandler.VisualBoundingBox(foundBlock), blockBounds.Min);
+                    compatible = compatible && visualBox.Intersects(lookRay).HasValue;
+                }
+                else
+                {
+                    compatible = false;
+                }
+            }
+
+            if (requireImpassable)
+            {
+                if (BlockHandler.IsPassable(foundBlock))
+                {
+                    compatible = false;
+                }
+                else
+                {
+                    BoundingBox blockingBox = HelperMethods.TranslateBox(BlockHandler.PhysicalBlockingBox(foundBlock), blockBounds.Min);
+                    compatible = compatible && blockingBox.Intersects(lookRay).HasValue;
+                }
+            }
+
+            return compatible;
         }
         #endregion
     }

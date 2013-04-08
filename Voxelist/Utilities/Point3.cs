@@ -19,6 +19,11 @@ namespace Voxelist.Utilities
             this.Z = z;
         }
 
+        public static implicit operator Vector3(Point3 point)
+        {
+            return new Vector3(point.X, point.Y, point.Z);
+        }
+
         public static Point3 RoundDown(Vector3 vec)
         {
             int xmin = (int)vec.X;

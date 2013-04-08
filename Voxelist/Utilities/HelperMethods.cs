@@ -51,6 +51,11 @@ namespace Voxelist.Utilities
             return new BoundingBox(min, max);
         }
 
+        public static BoundingBox TranslateBox(BoundingBox box, Vector3 translation)
+        {
+            return new BoundingBox(box.Min + translation, box.Max + translation);
+        }
+
         /// <summary>
         /// Given a "chunk bounding box" (that is, a boundingbox with chunk coordinates
         /// indicating where the floats are taken from), finds Chunk Coordinate bounds
@@ -91,6 +96,33 @@ namespace Voxelist.Utilities
             {
                 max.Z++;
                 boxmax.Z -= GameConstants.CHUNK_Z_LENGTH;
+            }
+        }
+
+        public static void FixCoordinates(ref int chunkX, ref int chunkZ, ref Point3 blockCoordinates)
+        {
+            while (blockCoordinates.X < 0)
+            {
+                blockCoordinates.X += GameConstants.CHUNK_X_WIDTH;
+                chunkX--;
+            }
+
+            while (blockCoordinates.X >= GameConstants.CHUNK_X_WIDTH)
+            {
+                blockCoordinates.X -= GameConstants.CHUNK_X_WIDTH;
+                chunkX++;
+            }
+
+            while (blockCoordinates.Z < 0)
+            {
+                blockCoordinates.Z += GameConstants.CHUNK_Z_LENGTH;
+                chunkZ--;
+            }
+
+            while (blockCoordinates.Z >= GameConstants.CHUNK_Z_LENGTH)
+            {
+                blockCoordinates.Z -= GameConstants.CHUNK_Z_LENGTH;
+                chunkZ++;
             }
         }
     }
