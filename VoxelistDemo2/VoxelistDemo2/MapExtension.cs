@@ -28,9 +28,9 @@ namespace VoxelistDemo2
 
         public override void MakeChunkData(int chunkX, int chunkZ, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
         {
-            for (int x = -1; x <= GameConstants.CHUNK_X_WIDTH; x++)
+            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
             {
-                for (int z = -1; z <= GameConstants.CHUNK_Z_LENGTH; z++)
+                for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
                 {
                     int height = FindHeight(chunkX * GameConstants.CHUNK_X_WIDTH + x, chunkZ * GameConstants.CHUNK_Z_LENGTH + z);
 
@@ -43,7 +43,7 @@ namespace VoxelistDemo2
                         else
                             block = new Block(0);
 
-                        arrayToFill[x + 1, y, z + 1] = block;
+                        arrayToFill[x, y, z] = block;
                     }
                 }
             }

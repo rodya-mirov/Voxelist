@@ -19,28 +19,32 @@ namespace Voxelist.Mapping
     /// <typeparam name="CubeType"></typeparam>
     public class Chunk
     {
-        protected BlockHandler handler;
-        protected Block[, ,] containedCubes;
-        protected List<EntitySchema> entitySchemata;
+        private BlockHandler BlockHandler { get; set; }
+        private Map Map { get; set; }
 
-        public int chunkX { get; protected set; }
-        public int chunkZ { get; protected set; }
+        private Block[, ,] containedCubes;
+        private List<EntitySchema> entitySchemata;
 
-        public Chunk(BlockHandler handler)
+        public int chunkX { get; private set; }
+        public int chunkZ { get; private set; }
+
+        public Chunk(BlockHandler handler, Map map)
         {
-            this.handler = handler;
-            containedCubes = new Block[GameConstants.CHUNK_X_WIDTH + 2, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH + 2];
+            this.Map = map;
+            this.BlockHandler = handler;
+            containedCubes = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
             entitySchemata = new List<EntitySchema>();
         }
 
-        public void OverwriteChunkDataWith(Map map, int chunkX, int chunkZ)
+        public void OverwriteChunkDataWith(int chunkX, int chunkZ)
         {
             this.chunkX = chunkX;
             this.chunkZ = chunkZ;
 
             entitySchemata.Clear();
 
-            map.MakeChunkData(chunkX, chunkZ, containedCubes, entitySchemata);
+            Map.MakeChunkData(chunkX, chunkZ, containedCubes, entitySchemata);
+
             RecalculateVisualGeometry();
         }
 
@@ -53,9 +57,9 @@ namespace Voxelist.Mapping
         /// <returns></returns>
         public Block this[int x, int y, int z]
         {
-            get { return containedCubes[x + 1, y, z + 1]; }
+            get { return containedCubes[x, y, z]; }
 
-            set { containedCubes[x + 1, y, z + 1] = value; }
+            set { containedCubes[x, y, z] = value; }
         }
 
         public IEnumerable<Entity> MakeGeneratedEntities(EntityBuilder builder, WorldManager manager)
@@ -71,23 +75,30 @@ namespace Voxelist.Mapping
 
         private BoundingBox visualBoundingBox;
 
+        /// <summary>
+        /// Recalculates the Visual geometry for the Chunk.  The supplied chunks can be null;
+        /// if not, will be used for visual occlusion (if null, will be assumed see-through).
+        /// </summary>
         public void RecalculateVisualGeometry()
         {
-            combinedPrimitives = new GeometryPrimitive[handler.TotalNumberOfTextures];
-            combinedVerticesCount = new int[handler.TotalNumberOfTextures];
-            combinedTrianglesCount = new int[handler.TotalNumberOfTextures];
-            usesTextureIndex = new bool[handler.TotalNumberOfTextures];
+            Chunk leftChunk, rightChunk, forwardChunk, backwardChunk;
+            LoadNeighborChunks(out leftChunk, out rightChunk, out forwardChunk, out backwardChunk);
 
-            float xmin = GameConstants.CHUNK_X_WIDTH;
-            float xmax = 0;
+            combinedPrimitives = new GeometryPrimitive[BlockHandler.TotalNumberOfTextures];
+            combinedVerticesCount = new int[BlockHandler.TotalNumberOfTextures];
+            combinedTrianglesCount = new int[BlockHandler.TotalNumberOfTextures];
+            usesTextureIndex = new bool[BlockHandler.TotalNumberOfTextures];
 
-            float ymin = GameConstants.CHUNK_Y_HEIGHT;
-            float ymax = 0;
+            float visualXMin = GameConstants.CHUNK_X_WIDTH;
+            float visualXMax = 0;
 
-            float zmin = GameConstants.CHUNK_Z_LENGTH;
-            float zmax = 0;
+            float visualYMin = GameConstants.CHUNK_Y_HEIGHT;
+            float visualYMax = 0;
 
-            for (int textureIndex = 0; textureIndex < handler.TotalNumberOfTextures; textureIndex++)
+            float visualZMin = GameConstants.CHUNK_Z_LENGTH;
+            float visualZMax = 0;
+
+            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
             {
                 List<GeometryPrimitive> buildingBlocks = new List<GeometryPrimitive>();
 
@@ -99,7 +110,7 @@ namespace Voxelist.Mapping
                         {
                             Block relevantBlock = this[x, y, z];
 
-                            if (!handler.IsVisible(relevantBlock) || handler.TextureIndex(relevantBlock) != textureIndex)
+                            if (!BlockHandler.IsVisible(relevantBlock) || BlockHandler.TextureIndex(relevantBlock) != textureIndex)
                                 continue;
 
                             bool includeFrontFace, includeBackFace;
@@ -109,23 +120,25 @@ namespace Voxelist.Mapping
                             MakeOcclusionTags(x, y, z,
                                 out includeFrontFace, out includeBackFace,
                                 out includeTopFace, out includeBottomFace,
-                                out includeLeftFace, out includeRightFace);
+                                out includeLeftFace, out includeRightFace,
+                                leftChunk, rightChunk,
+                                forwardChunk, backwardChunk);
 
                             bool hasVisibleFace = (includeTopFace || includeBottomFace || includeBackFace || includeFrontFace || includeRightFace || includeLeftFace);
 
                             if (!hasVisibleFace)
                                 continue;
 
-                            xmin = MathHelper.Min(xmin, x);
-                            xmax = MathHelper.Max(xmax, x + 1);
+                            visualXMin = MathHelper.Min(visualXMin, x);
+                            visualXMax = MathHelper.Max(visualXMax, x + 1);
 
-                            ymin = MathHelper.Min(ymin, y);
-                            ymax = MathHelper.Max(ymax, y + 1);
+                            visualYMin = MathHelper.Min(visualYMin, y);
+                            visualYMax = MathHelper.Max(visualYMax, y + 1);
 
-                            zmin = MathHelper.Min(zmin, z);
-                            zmax = MathHelper.Max(zmax, z + 1);
+                            visualZMin = MathHelper.Min(visualZMin, z);
+                            visualZMax = MathHelper.Max(visualZMax, z + 1);
 
-                            GeometryPrimitive drawingPrimitive = handler.DrawingPrimitive(relevantBlock,
+                            GeometryPrimitive drawingPrimitive = BlockHandler.DrawingPrimitive(relevantBlock,
                                 includeFrontFace, includeBackFace, includeTopFace, includeBottomFace,
                                 includeLeftFace, includeRightFace);
 
@@ -136,8 +149,8 @@ namespace Voxelist.Mapping
                 }
 
                 visualBoundingBox = new BoundingBox(
-                    new Vector3(xmin, ymin, zmin),
-                    new Vector3(xmax, ymax, zmax));
+                    new Vector3(visualXMin, visualYMin, visualZMin),
+                    new Vector3(visualXMax, visualYMax, visualZMax));
 
                 GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
                 buildingBlocks.CopyTo(primitivesArray);
@@ -153,41 +166,79 @@ namespace Voxelist.Mapping
             }
         }
 
+        private void LoadNeighborChunks(out Chunk leftChunk, out Chunk rightChunk,
+            out Chunk forwardChunk, out Chunk backwardChunk)
+        {
+            leftChunk = Map.GetChunk(chunkX - 1, chunkZ, false, false);
+            rightChunk = Map.GetChunk(chunkX + 1, chunkZ, false, false);
+            forwardChunk = Map.GetChunk(chunkX, chunkZ - 1, false, false);
+            backwardChunk = Map.GetChunk(chunkX, chunkZ + 1, false, false);
+        }
+
         private void MakeOcclusionTags(int x, int y, int z,
             out bool includeFrontFace, out bool includeBackFace,
             out bool includeTopFace, out bool includeBottomFace,
-            out bool includeLeftFace, out bool includeRightFace)
+            out bool includeLeftFace, out bool includeRightFace,
+            Chunk leftChunk, Chunk rightChunk, Chunk forwardChunk, Chunk backwardChunk)
         {
-            if (handler.IsFullAndOpaqueToTheRight(this[x - 1, y, z]))
+            if (x == 0)
+            {
+                if (leftChunk != null)
+                    includeLeftFace = !BlockHandler.IsFullAndOpaqueToTheRight(leftChunk[GameConstants.CHUNK_X_WIDTH - 1, y, z]);
+                else
+                    includeLeftFace = true;
+            }
+            else if (BlockHandler.IsFullAndOpaqueToTheRight(this[x - 1, y, z]))
                 includeLeftFace = false;
             else
                 includeLeftFace = true;
 
-            if (handler.IsFullAndOpaqueToTheLeft(this[x + 1, y, z]))
+            if (x + 1 == GameConstants.CHUNK_X_WIDTH)
+            {
+                if (rightChunk != null)
+                    includeRightFace = !BlockHandler.IsFullAndOpaqueToTheLeft(rightChunk[0, y, z]);
+                else
+                    includeRightFace = true;
+            }
+            else if (BlockHandler.IsFullAndOpaqueToTheLeft(this[x + 1, y, z]))
                 includeRightFace = false;
             else
                 includeRightFace = true;
 
             if (y == 0)
                 includeBottomFace = false;
-            else if (handler.IsFullAndOpaqueToTheTop(this[x, y - 1, z]))
+            else if (BlockHandler.IsFullAndOpaqueToTheTop(this[x, y - 1, z]))
                 includeBottomFace = false;
             else
                 includeBottomFace = true;
 
             if (y + 1 == GameConstants.CHUNK_Y_HEIGHT)
                 includeTopFace = true;
-            else if (handler.IsFullAndOpaqueToTheBottom(this[x, y + 1, z]))
+            else if (BlockHandler.IsFullAndOpaqueToTheBottom(this[x, y + 1, z]))
                 includeTopFace = false;
             else
                 includeTopFace = true;
 
-            if (handler.IsFullAndOpaqueToTheBack(this[x, y, z - 1]))
+            if (z == 0)
+            {
+                if (forwardChunk != null)
+                    includeFrontFace = !BlockHandler.IsFullAndOpaqueToTheBack(forwardChunk[x, y, GameConstants.CHUNK_Z_LENGTH - 1]);
+                else
+                    includeFrontFace = true;
+            }
+            else if (BlockHandler.IsFullAndOpaqueToTheBack(this[x, y, z - 1]))
                 includeFrontFace = false;
             else
                 includeFrontFace = true;
 
-            if (handler.IsFullAndOpaqueToTheFront(this[x, y, z + 1]))
+            if (z + 1 == GameConstants.CHUNK_Z_LENGTH)
+            {
+                if (backwardChunk != null)
+                    includeBackFace = !BlockHandler.IsFullAndOpaqueToTheFront(backwardChunk[x, y, 0]);
+                else
+                    includeBackFace = true;
+            }
+            else if (BlockHandler.IsFullAndOpaqueToTheFront(this[x, y, z + 1]))
                 includeBackFace = false;
             else
                 includeBackFace = true;
@@ -214,7 +265,7 @@ namespace Voxelist.Mapping
             if (!usesTextureIndex[textureIndex])
                 return;
 
-            BasicEffect drawingEffect = handler.DrawingEffect(textureIndex);
+            BasicEffect drawingEffect = BlockHandler.DrawingEffect(textureIndex);
 
             drawingEffect.World = Matrix.CreateTranslation(drawLocation);
             drawingEffect.Projection = Camera.ProjectionMatrix;

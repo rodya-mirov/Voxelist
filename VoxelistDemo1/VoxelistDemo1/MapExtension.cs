@@ -34,40 +34,12 @@ namespace VoxelistDemo1
 
         private static void addBlockData(int chunkX, int chunkZ, Block[, ,] arrayToFill)
         {
-            for (int xIndex = -1; xIndex <= GameConstants.CHUNK_X_WIDTH; xIndex++)
+            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
             {
                 for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                 {
-                    for (int zIndex = -1; zIndex <= GameConstants.CHUNK_Z_LENGTH; zIndex++)
+                    for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
                     {
-                        int currentChunkX = chunkX;
-                        int currentChunkZ = chunkZ;
-
-                        int x = xIndex;
-                        int z = zIndex;
-
-                        if (x == -1)
-                        {
-                            x += GameConstants.CHUNK_X_WIDTH;
-                            currentChunkX--;
-                        }
-                        else if (x == GameConstants.CHUNK_X_WIDTH)
-                        {
-                            x -= GameConstants.CHUNK_X_WIDTH;
-                            currentChunkX++;
-                        }
-
-                        if (z == -1)
-                        {
-                            z += GameConstants.CHUNK_Z_LENGTH;
-                            currentChunkZ--;
-                        }
-                        else if (z == GameConstants.CHUNK_Z_LENGTH)
-                        {
-                            z -= GameConstants.CHUNK_Z_LENGTH;
-                            currentChunkZ++;
-                        }
-
                         Block block;
 
                         //ground everywhere, and pyramid mountains
@@ -75,7 +47,7 @@ namespace VoxelistDemo1
 
                         if (y == 0) //uniform ground everywhere, but sometimes ice
                         {
-                            if ((currentChunkX & 1) == 0 || (currentChunkZ & 1) == 0)
+                            if ((chunkX & 1) == 0 || (chunkZ & 1) == 0)
                                 block = new Block(1);
                             else
                                 block = new Block(2);
@@ -84,21 +56,21 @@ namespace VoxelistDemo1
                         {
                             block = new Block(1);
                         }
-                        else if ((currentChunkX & 1) == 0 && (currentChunkZ & 1) == 0) //even/even chunk coords, etc.
+                        else if ((chunkX & 1) == 0 && (chunkZ & 1) == 0) //even/even chunk coords, etc.
                         {
                             if (z >= x + y + 5)
                                 block = new Block(1);
                             else
                                 block = new Block(0);
                         }
-                        else if ((currentChunkX & 1) == 1 && (currentChunkZ & 1) == 0)
+                        else if ((chunkX & 1) == 1 && (chunkZ & 1) == 0)
                         {
                             if (z >= (GameConstants.CHUNK_X_WIDTH - x) + y + 5)
                                 block = new Block(1);
                             else
                                 block = new Block(0);
                         }
-                        else if ((currentChunkX & 1) == 0 && (currentChunkZ & 1) == 1)
+                        else if ((chunkX & 1) == 0 && (chunkZ & 1) == 1)
                         {
                             if ((GameConstants.CHUNK_Z_LENGTH - z - 2) >= x + y + 5)
                                 block = new Block(1);
@@ -113,7 +85,7 @@ namespace VoxelistDemo1
                                 block = new Block(0);
                         }
 
-                        arrayToFill[xIndex + 1, y, zIndex + 1] = block;
+                        arrayToFill[x, y, z] = block;
                     }
                 }
             }

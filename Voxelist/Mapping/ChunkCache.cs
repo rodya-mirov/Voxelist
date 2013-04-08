@@ -287,9 +287,7 @@ namespace Voxelist.Mapping
         /// <summary>
         /// Determines whether the specified chunk coordinate is currently
         /// read to load and use.  If the answer is no, this method
-        /// automatically puts in a request for it (equivalent to calling
-        /// Request).
-        /// </summary>
+        /// returns false (no automatic requests).
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
         /// <returns></returns>
@@ -307,7 +305,6 @@ namespace Voxelist.Mapping
                 }
                 else
                 {
-                    Request(chunkX, chunkZ);
                     return false;
                 }
             }
@@ -471,10 +468,10 @@ namespace Voxelist.Mapping
             {
                 cacheData = this[loadChunkX, loadChunkZ];
                 if (cacheData.Chunk == null)
-                    cacheData.GiveBlankChunk(BlockHandler);
+                    cacheData.GiveBlankChunk(BlockHandler, Map);
             }
 
-            cacheData.Chunk.OverwriteChunkDataWith(Map, loadChunkX, loadChunkZ);
+            cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
 
             lock (CacheLock)
             {
@@ -543,9 +540,9 @@ namespace Voxelist.Mapping
                 EntitiesSpawned = true;
             }
 
-            public void GiveBlankChunk(BlockHandler BlockHandler)
+            public void GiveBlankChunk(BlockHandler handler, Map map)
             {
-                Chunk = new Chunk(BlockHandler);
+                Chunk = new Chunk(handler, map);
             }
         }
         #endregion

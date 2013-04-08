@@ -15,9 +15,12 @@ namespace VoxelistDemo3
     {
         private const string SkyboxTextureLocation = "Textures/Skyboxes/SkyboxGraphics";
 
+        private MapExtension Map { get; set; }
+
         public WorldManagerExtension(Game game, MapExtension map, BlockHandlerExtension handler, EntityBuilderExtension builder)
             : base(game, map, handler, builder, SkyboxTextureLocation)
         {
+            this.Map = map;
         }
 
         public PlayerAvatar Avatar { get; private set; }

@@ -26,43 +26,15 @@ namespace VoxelistDemo3
             get { return 5; }
         }
 
-        public override void MakeChunkData(int cx, int cz, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
+        public override void MakeChunkData(int chunkX, int chunkZ, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
         {
 
-            for (int xIndex = -1; xIndex <= GameConstants.CHUNK_X_WIDTH; xIndex++)
+            for (int x = 0; x < GameConstants.CHUNK_X_WIDTH; x++)
             {
                 for (int y = 0; y < GameConstants.CHUNK_Y_HEIGHT; y++)
                 {
-                    for (int zIndex = -1; zIndex <= GameConstants.CHUNK_Z_LENGTH; zIndex++)
+                    for (int z = 0; z < GameConstants.CHUNK_Z_LENGTH; z++)
                     {
-                        int chunkX = cx;
-                        int chunkZ = cz;
-
-                        int x = xIndex;
-                        int z = zIndex;
-
-                        if (x == -1)
-                        {
-                            x += GameConstants.CHUNK_X_WIDTH;
-                            chunkX--;
-                        }
-                        else if (x == GameConstants.CHUNK_X_WIDTH)
-                        {
-                            x -= GameConstants.CHUNK_X_WIDTH;
-                            chunkX++;
-                        }
-
-                        if (z == -1)
-                        {
-                            z += GameConstants.CHUNK_Z_LENGTH;
-                            chunkZ--;
-                        }
-                        else if (z == GameConstants.CHUNK_Z_LENGTH)
-                        {
-                            z -= GameConstants.CHUNK_Z_LENGTH;
-                            chunkZ++;
-                        }
-
                         Block block;
 
                         //ground everywhere, and pyramid mountains
@@ -108,7 +80,7 @@ namespace VoxelistDemo3
                                 block = new Block(0);
                         }
 
-                        arrayToFill[xIndex + 1, y, zIndex + 1] = block;
+                        arrayToFill[x, y, z] = block;
                     }
                 }
             }

@@ -25,7 +25,7 @@ namespace Voxelist.Mapping
         /// though they should not be assumed to be always equal.
         /// </summary>
         public int CenterChunkX { get; private set; }
-        
+
         /// <summary>
         /// The current Center Chunk coordinate (Z) of this Map.
         /// Typically tied to the Chunk position of the Camera,
@@ -148,26 +148,30 @@ namespace Voxelist.Mapping
         /// <param name="chunkX"></param>
         /// <param name="chunkY"></param>
         /// <returns></returns>
-        public Chunk GetChunk(int chunkX, int chunkZ, bool urgent)
+        public Chunk GetChunk(int chunkX, int chunkZ, bool urgent, bool shouldRequest)
         {
             if (Cache.IsReady(chunkX, chunkZ))
                 return Cache.GetChunk(chunkX, chunkZ);
 
-            else if (urgent)
+            if (shouldRequest)
+                Cache.Request(chunkX, chunkZ);
+
+            if (urgent)
             {
                 Cache.ForceAddChunk(chunkX, chunkZ);
                 return Cache.GetChunk(chunkX, chunkZ);
             }
-
             else
+            {
                 return null;
+            }
         }
 
         private Block GetHighPriorityBlock(int chunkX, int chunkZ, int cubeX, int cubeY, int cubeZ)
         {
             Numerical.RepairBlockCoordinates(ref chunkX, ref chunkZ, ref cubeX, ref cubeZ);
 
-            return GetChunk(chunkX, chunkZ, true)[cubeX, cubeY, cubeZ];
+            return GetChunk(chunkX, chunkZ, true, true)[cubeX, cubeY, cubeZ];
         }
         #endregion
 
@@ -204,7 +208,7 @@ namespace Voxelist.Mapping
                         int chunkX = chunkOffsetX + centerChunkX;
                         int chunkZ = chunkOffsetZ + centerChunkZ;
 
-                        Chunk drawableChunk = GetChunk(chunkX, chunkZ, false);
+                        Chunk drawableChunk = GetChunk(chunkX, chunkZ, false, true);
 
                         if (drawableChunk != null)
                             drawableChunk.Draw(translation, textureIndex);
