@@ -471,7 +471,10 @@ namespace Voxelist.Mapping
                     cacheData.GiveBlankChunk(BlockHandler, Map);
             }
 
-            cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
+            lock (cacheData.Chunk)
+            {
+                cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
+            }
 
             lock (CacheLock)
             {
@@ -483,17 +486,20 @@ namespace Voxelist.Mapping
 
         private void reloadVisualDataForNeighbors(int chunkX, int chunkZ)
         {
-            if (IsReady(chunkX - 1, chunkZ))
-                this[chunkX - 1, chunkZ].Chunk.RecalculateVisualGeometry();
+            lock (CacheLock)
+            {
+                if (IsReady(chunkX - 1, chunkZ))
+                    this[chunkX - 1, chunkZ].Chunk.RecalculateVisualGeometry();
 
-            if (IsReady(chunkX + 1, chunkZ))
-                this[chunkX + 1, chunkZ].Chunk.RecalculateVisualGeometry();
+                if (IsReady(chunkX + 1, chunkZ))
+                    this[chunkX + 1, chunkZ].Chunk.RecalculateVisualGeometry();
 
-            if (IsReady(chunkX, chunkZ - 1))
-                this[chunkX, chunkZ - 1].Chunk.RecalculateVisualGeometry();
+                if (IsReady(chunkX, chunkZ - 1))
+                    this[chunkX, chunkZ - 1].Chunk.RecalculateVisualGeometry();
 
-            if (IsReady(chunkX, chunkZ + 1))
-                this[chunkX, chunkZ + 1].Chunk.RecalculateVisualGeometry();
+                if (IsReady(chunkX, chunkZ + 1))
+                    this[chunkX, chunkZ + 1].Chunk.RecalculateVisualGeometry();
+            }
         }
         #endregion
 
