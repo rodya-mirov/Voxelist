@@ -7,6 +7,7 @@ using Voxelist.Utilities;
 using Voxelist.Entities;
 using Voxelist.BlockHandling;
 using Voxelist.Rendering;
+using Microsoft.Xna.Framework;
 
 namespace Voxelist.Mapping
 {
@@ -36,7 +37,26 @@ namespace Voxelist.Mapping
 
         public void Dispose()
         {
-            loaderShouldKeepRunning = false;
+            lock (CacheLock)
+            {
+                loaderShouldKeepRunning = false;
+            }
+        }
+
+        private Queue<ChunkCoordinate> ToRecalculate = new Queue<ChunkCoordinate>();
+
+        public void Update(GameTime gametime)
+        {
+            lock (CacheLock)
+            {
+                foreach (ChunkCoordinate coord in ToRecalculate)
+                {
+                    if (IsReady(coord.X, coord.Z))
+                        GetChunk(coord.X, coord.Z).RecalculateVisualGeometry();
+                }
+
+                ToRecalculate.Clear();
+            }
         }
 
         private int IntendedCenterX { get; set; }
@@ -265,14 +285,24 @@ namespace Voxelist.Mapping
         {
             lock (CacheLock)
             {
-                if (IsReady(chunkX, chunkZ))
+                if (HasSavedChunk(chunkX, chunkZ))
+                {
+                    return true;
+                }
+                else if (IsReady(chunkX, chunkZ))
                 {
                     CacheData dat = this[chunkX, chunkZ];
+
+                    CacheData blankData = new CacheData();
+                    blankData.CleanAndValidate();
+
+                    this[chunkX, chunkZ] = blankData;
+
                     savedChunkData[new ChunkCoordinate(chunkX, chunkZ)] = dat;
 
-                    CacheData newData = new CacheData();
-                    newData.CleanAndValidate();
-                    this[chunkX, chunkZ] = newData;
+                    if (this[chunkX, chunkZ] != dat)
+                        throw new ArgumentException();
+
                     return true;
                 }
                 else
@@ -466,39 +496,24 @@ namespace Voxelist.Mapping
 
             lock (CacheLock)
             {
+                if (HasSavedChunk(loadChunkX, loadChunkZ))
+                    return;
+
                 cacheData = this[loadChunkX, loadChunkZ];
                 if (cacheData.Chunk == null)
                     cacheData.GiveBlankChunk(BlockHandler, Map);
             }
 
-            lock (cacheData.Chunk)
-            {
-                cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
-            }
+            cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
 
             lock (CacheLock)
             {
                 cacheData.CleanAndValidate();
 
-                reloadVisualDataForNeighbors(loadChunkX, loadChunkZ);
-            }
-        }
-
-        private void reloadVisualDataForNeighbors(int chunkX, int chunkZ)
-        {
-            lock (CacheLock)
-            {
-                if (IsReady(chunkX - 1, chunkZ))
-                    this[chunkX - 1, chunkZ].Chunk.RecalculateVisualGeometry();
-
-                if (IsReady(chunkX + 1, chunkZ))
-                    this[chunkX + 1, chunkZ].Chunk.RecalculateVisualGeometry();
-
-                if (IsReady(chunkX, chunkZ - 1))
-                    this[chunkX, chunkZ - 1].Chunk.RecalculateVisualGeometry();
-
-                if (IsReady(chunkX, chunkZ + 1))
-                    this[chunkX, chunkZ + 1].Chunk.RecalculateVisualGeometry();
+                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX - 1, loadChunkZ));
+                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX + 1, loadChunkZ));
+                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ - 1));
+                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ + 1));
             }
         }
         #endregion
@@ -640,6 +655,24 @@ namespace Voxelist.Mapping
 
             foreach (Entity e in dat.Chunk.MakeGeneratedEntities(builder, manager))
                 yield return e;
+        }
+        #endregion
+
+        #region Editing
+        public void ChangeBlock(int chunkX, int chunkZ, int blockX, int blockY, int blockZ, Block newBlock)
+        {
+            HelperMethods.FixCoordinates(ref chunkX, ref chunkZ, ref blockX, ref blockY, ref blockZ);
+
+            lock (CacheLock)
+            {
+                if (!IsReady(chunkX, chunkZ))
+                    throw new ArgumentException("Can't modify a chunk we haven't generated!");
+
+                CacheData dat = this[chunkX, chunkZ];
+                dat.Chunk[blockX, blockY, blockZ] = newBlock;
+
+                SaveChunk(chunkX, chunkZ);
+            }
         }
         #endregion
     }

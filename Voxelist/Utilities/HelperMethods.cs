@@ -99,31 +99,48 @@ namespace Voxelist.Utilities
             }
         }
 
-        public static void FixCoordinates(ref int chunkX, ref int chunkZ, ref Point3 blockCoordinates)
+        #region Coordinate Fixing
+        public static void FixCoordinates(ref int chunkX, ref int chunkZ, ref int blockX, ref int blockY, ref int blockZ)
         {
-            while (blockCoordinates.X < 0)
+            while (blockX < 0)
             {
-                blockCoordinates.X += GameConstants.CHUNK_X_WIDTH;
                 chunkX--;
+                blockX += GameConstants.CHUNK_X_WIDTH;
             }
 
-            while (blockCoordinates.X >= GameConstants.CHUNK_X_WIDTH)
+            while (blockX >= GameConstants.CHUNK_X_WIDTH)
             {
-                blockCoordinates.X -= GameConstants.CHUNK_X_WIDTH;
                 chunkX++;
+                blockX -= GameConstants.CHUNK_X_WIDTH;
             }
 
-            while (blockCoordinates.Z < 0)
+            while (blockZ < 0)
             {
-                blockCoordinates.Z += GameConstants.CHUNK_Z_LENGTH;
                 chunkZ--;
+                blockZ += GameConstants.CHUNK_Z_LENGTH;
             }
 
-            while (blockCoordinates.Z >= GameConstants.CHUNK_Z_LENGTH)
+            while (blockZ >= GameConstants.CHUNK_Z_LENGTH)
             {
-                blockCoordinates.Z -= GameConstants.CHUNK_Z_LENGTH;
                 chunkZ++;
+                blockZ -= GameConstants.CHUNK_Z_LENGTH;
             }
         }
+
+        public static void FixCoordinates(ref ChunkCoordinate chunk, ref Point3 block)
+        {
+            FixCoordinates(ref chunk.X, ref chunk.Z, ref block);
+        }
+
+        public static void FixCoordinates(ref int chunkX, ref int chunkZ, ref Point3 blockCoordinates)
+        {
+            FixCoordinates(ref chunkX, ref chunkZ, ref blockCoordinates.X, ref blockCoordinates.Y, ref blockCoordinates.Z);
+        }
+
+        public static void FixCoordinates(ref ChunkCoordinate chunk, ref int blockX, ref int blockY, ref int blockZ)
+        {
+            FixCoordinates(ref chunk.X, ref chunk.Z, ref blockX, ref blockY, ref blockZ);
+        }
+        #endregion
     }
 }

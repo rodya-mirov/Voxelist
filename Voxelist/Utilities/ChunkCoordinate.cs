@@ -22,7 +22,7 @@ namespace Voxelist.Utilities
 
         public override bool Equals(object o)
         {
-            if (o is Point3)
+            if (o is ChunkCoordinate)
                 return this == (ChunkCoordinate)o;
             else
                 return false;

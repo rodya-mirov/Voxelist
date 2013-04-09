@@ -15,11 +15,14 @@ namespace VoxelistDemo3
 {
     public class MouseOverBlock : Entity
     {
-        public MouseOverBlock(WorldPosition position, WorldManager manager, PlayerAvatar parent)
+        private Map map;
+
+        public MouseOverBlock(WorldPosition position, WorldManager manager, Map map, PlayerAvatar parent)
             : base(position, manager)
         {
             this.parent = parent;
-            this.Visible = false;
+            this.map = map;
+            this.HasFixedPosition = false;
         }
 
         private PlayerAvatar parent;
@@ -31,6 +34,9 @@ namespace VoxelistDemo3
 
         private const float buffer = 0.125f;
         private const float size = 1f - 2f * (buffer);
+
+        private ChunkCoordinate fixedChunkCoordinate;
+        private Point3 fixedBlockCoordinate;
 
         public static void LoadContent(Game game)
         {
@@ -100,73 +106,74 @@ namespace VoxelistDemo3
 
         public override void Update(GameTime gametime)
         {
-            //no physics here!
-            //base.physicsUpdate(gametime); // :)
-
-            int chunkX, chunkZ;
-            Block lookAtBlock;
-            Point3 blockPosition;
-            Face faceTouched;
-            bool successful;
-
-            WorldManager.BlockLookedAt(TestDistance, true, true, out lookAtBlock, out chunkX, out chunkZ, out blockPosition, out faceTouched, out successful);
-
-            if (successful)
+            if (WantVisible)
             {
-                Visible = true;
-                SetBlockPositionFor(chunkX, chunkZ, blockPosition.X, blockPosition.Y, blockPosition.Z, faceTouched);
-            }
-            else
-            {
-                Visible = false;
+                //no physics here!
+                //base.physicsUpdate(gametime); // :)~~
+
+                int chunkX, chunkZ;
+                Block lookAtBlock;
+                Point3 blockPosition;
+                Face faceTouched;
+                bool successful;
+
+                WorldManager.BlockLookedAt(TestDistance, true, true, out lookAtBlock,
+                    out chunkX, out chunkZ, out blockPosition, out faceTouched, out successful);
+
+                if (successful)
+                {
+                    HasFixedPosition = true;
+
+                    switch (faceTouched)
+                    {
+                        case Face.LEFT:
+                            blockPosition.X--;
+                            break;
+
+                        case Face.RIGHT:
+                            blockPosition.X++;
+                            break;
+
+                        case Face.TOP:
+                            blockPosition.Y++;
+                            break;
+
+                        case Face.BOTTOM:
+                            blockPosition.Y--;
+                            break;
+
+                        case Face.FRONT:
+                            blockPosition.Z--;
+                            break;
+
+                        case Face.BACK:
+                            blockPosition.Z++;
+                            break;
+
+                        default:
+                            throw new NotImplementedException();
+                    }
+
+                    fixedChunkCoordinate = new ChunkCoordinate(chunkX, chunkZ);
+                    fixedBlockCoordinate = blockPosition;
+                    HelperMethods.FixCoordinates(ref fixedChunkCoordinate, ref fixedBlockCoordinate);
+
+                    this.Position = new WorldPosition(fixedChunkCoordinate.X, fixedChunkCoordinate.Z,
+                        fixedBlockCoordinate.X, fixedBlockCoordinate.Y, fixedBlockCoordinate.Z);
+                }
+                else
+                {
+                    HasFixedPosition = false;
+                }
             }
         }
 
-        public bool Visible { get; private set; }
-        public override bool IsVisible { get { return Visible; } }
-        public bool AlwaysOnTop { get; set; }
+        public bool HasFixedPosition { get; private set; }
+        public override bool IsVisible { get { return HasFixedPosition && WantVisible; } }
         public bool WantVisible { get; set; }
-
-        public void SetBlockPositionFor(int chunkX, int chunkZ, int blockX, int blockY, int blockZ, Face facing)
-        {
-            if (AlwaysOnTop)
-                facing = Face.TOP;
-
-            switch (facing)
-            {
-                case Face.LEFT:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX - 1, blockY, blockZ);
-                    break;
-
-                case Face.RIGHT:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX + 1, blockY, blockZ);
-                    break;
-
-                case Face.TOP:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY + 1, blockZ);
-                    break;
-
-                case Face.BOTTOM:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY - 1, blockZ);
-                    break;
-
-                case Face.FRONT:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ - 1);
-                    break;
-
-                case Face.BACK:
-                    this.Position = new WorldPosition(chunkX, chunkZ, blockX, blockY, blockZ + 1);
-                    break;
-
-                default: throw new NotImplementedException();
-            }
-        }
 
         public override void Draw(GameTime gametime)
         {
-            if (!Visible || !WantVisible)
-                return;
-
             drawingEffect.World = Matrix.CreateTranslation(Camera.objectTranslation(Position));
 
             drawingEffect.View = Camera.ViewMatrix;
@@ -184,6 +191,16 @@ namespace VoxelistDemo3
                     0, numTriangles
                     );
             }
+        }
+
+        public void SaveFixedBlock()
+        {
+            if (!HasFixedPosition)
+                return;
+
+            map.ChangeBlock(fixedChunkCoordinate.X, fixedChunkCoordinate.Z,
+                fixedBlockCoordinate.X, fixedBlockCoordinate.Y, fixedBlockCoordinate.Z,
+                new Block(1));
         }
     }
 }

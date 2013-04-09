@@ -59,7 +59,11 @@ namespace Voxelist.Mapping
         {
             get { return containedCubes[x, y, z]; }
 
-            set { containedCubes[x, y, z] = value; }
+            set
+            {
+                containedCubes[x, y, z] = value;
+                RecalculateVisualGeometry();
+            }
         }
 
         public IEnumerable<Entity> MakeGeneratedEntities(EntityBuilder builder, WorldManager manager)

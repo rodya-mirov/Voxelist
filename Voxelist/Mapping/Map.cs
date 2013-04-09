@@ -105,6 +105,8 @@ namespace Voxelist.Mapping
                 CenterChunkX += dx;
                 CenterChunkZ += dz;
             }
+
+            Cache.Update(gametime);
         }
 
         private void CenterChanged(int dx, int dz)
@@ -172,6 +174,13 @@ namespace Voxelist.Mapping
             Numerical.RepairBlockCoordinates(ref chunkX, ref chunkZ, ref cubeX, ref cubeZ);
 
             return GetChunk(chunkX, chunkZ, true, true)[cubeX, cubeY, cubeZ];
+        }
+        #endregion
+
+        #region Editing
+        public void ChangeBlock(int chunkX, int chunkZ, int blockX, int blockY, int blockZ, Block newBlock)
+        {
+            Cache.ChangeBlock(chunkX, chunkZ, blockX, blockY, blockZ, newBlock);
         }
         #endregion
 

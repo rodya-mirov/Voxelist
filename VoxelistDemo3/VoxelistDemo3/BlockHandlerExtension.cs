@@ -12,7 +12,7 @@ namespace VoxelistDemo3
     /// <summary>
     /// 0 is invisible
     /// 1 is dirt (with grass on top)
-    /// 2 is water (semi-transparent)
+    /// 2 is ice
     /// </summary>
     public class BlockHandlerExtension : BlockHandler
     {

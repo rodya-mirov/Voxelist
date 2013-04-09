@@ -41,7 +41,7 @@ namespace VoxelistDemo3
             Avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 3, -5), this);
             Camera.StartFollowing(Avatar);
 
-            TestBlock = new MouseOverBlock(new WorldPosition(0, 0, 0, 3, -2), this, Avatar);
+            TestBlock = new MouseOverBlock(new WorldPosition(0, 0, 0, 3, -2),this, Map, Avatar);
         }
 
         private bool leftMouseHeld = false;
@@ -54,7 +54,7 @@ namespace VoxelistDemo3
             MouseState ms = Mouse.GetState();
 
             if (ms.LeftButton == ButtonState.Pressed && !leftMouseHeld)
-                TestBlock.AlwaysOnTop = !TestBlock.AlwaysOnTop;
+                TestBlock.SaveFixedBlock();
 
             if (ms.RightButton == ButtonState.Pressed && !rightMouseHeld)
                 TestBlock.WantVisible = !TestBlock.WantVisible;

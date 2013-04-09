@@ -18,7 +18,7 @@ namespace VoxelistDemo3
 
         public override int ViewRadius
         {
-            get { return 13; }
+            get { return 6; }
         }
 
         public override int EntitySpawnRadius
