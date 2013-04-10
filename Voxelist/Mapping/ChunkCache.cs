@@ -43,21 +43,44 @@ namespace Voxelist.Mapping
             }
         }
 
-        private Queue<ChunkCoordinate> ToRecalculate = new Queue<ChunkCoordinate>();
-
         public void Update(GameTime gametime)
+        {
+            updateGeometries(gametime);
+        }
+
+        #region Geometry Recalculation
+        private Queue<ChunkCoordinate> ToRecalculate = new Queue<ChunkCoordinate>();
+        
+        private double secondsBetweenRecalculations = 0.5;
+        private double secondsWaitedSoFar = 0;
+
+        private void updateGeometries(GameTime gametime)
         {
             lock (CacheLock)
             {
-                foreach (ChunkCoordinate coord in ToRecalculate)
+                secondsWaitedSoFar += gametime.ElapsedGameTime.TotalSeconds;
+                if (secondsWaitedSoFar > secondsBetweenRecalculations)
                 {
-                    if (IsReady(coord.X, coord.Z))
-                        GetChunk(coord.X, coord.Z).RecalculateVisualGeometry();
-                }
+                    secondsWaitedSoFar = 0;
 
-                ToRecalculate.Clear();
+                    if (ToRecalculate.Count > 0)
+                    {
+                        ChunkCoordinate coord = ToRecalculate.Dequeue();
+                        if (IsReady(coord.X, coord.Z))
+                            GetChunk(coord.X, coord.Z).RecalculateVisualGeometry();
+                    }
+                }
             }
         }
+
+        private void QueueRecalculationOfNeighbors(int loadChunkX, int loadChunkZ)
+        {
+            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX - 1, loadChunkZ));
+            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX + 1, loadChunkZ));
+            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ - 1));
+            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ + 1));
+        }
+        #endregion
 
         private int IntendedCenterX { get; set; }
         private int IntendedCenterZ { get; set; }
@@ -432,7 +455,7 @@ namespace Voxelist.Mapping
                 if (foundChunkToLoad)
                     MakeAndCacheChunk(loadChunkX, loadChunkZ);
 
-                Thread.Sleep(10);
+                Thread.Sleep(20);
             }
         }
 
@@ -510,10 +533,7 @@ namespace Voxelist.Mapping
             {
                 cacheData.CleanAndValidate();
 
-                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX - 1, loadChunkZ));
-                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX + 1, loadChunkZ));
-                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ - 1));
-                ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ + 1));
+                QueueRecalculationOfNeighbors(loadChunkX, loadChunkZ);
             }
         }
         #endregion
