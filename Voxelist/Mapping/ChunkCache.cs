@@ -45,40 +45,42 @@ namespace Voxelist.Mapping
 
         public void Update(GameTime gametime)
         {
-            updateGeometries(gametime);
         }
 
         #region Geometry Recalculation
-        private Queue<ChunkCoordinate> ToRecalculate = new Queue<ChunkCoordinate>();
-        
-        private double secondsBetweenRecalculations = 0.5;
-        private double secondsWaitedSoFar = 0;
-
-        private void updateGeometries(GameTime gametime)
+        private void RecalculationNeighbors(int loadChunkX, int loadChunkZ)
         {
+            Chunk left = null;
+            Chunk right = null;
+            Chunk forward = null;
+            Chunk backward = null;
+
             lock (CacheLock)
             {
-                secondsWaitedSoFar += gametime.ElapsedGameTime.TotalSeconds;
-                if (secondsWaitedSoFar > secondsBetweenRecalculations)
-                {
-                    secondsWaitedSoFar = 0;
+                if (IsReady(loadChunkX - 1, loadChunkZ))
+                    left = this[loadChunkX - 1, loadChunkZ].Chunk;
 
-                    if (ToRecalculate.Count > 0)
-                    {
-                        ChunkCoordinate coord = ToRecalculate.Dequeue();
-                        if (IsReady(coord.X, coord.Z))
-                            GetChunk(coord.X, coord.Z).RecalculateVisualGeometry();
-                    }
-                }
+                if (IsReady(loadChunkX + 1, loadChunkZ))
+                    right = this[loadChunkX + 1, loadChunkZ].Chunk;
+
+                if (IsReady(loadChunkX, loadChunkZ - 1))
+                    forward = this[loadChunkX, loadChunkZ - 1].Chunk;
+
+                if (IsReady(loadChunkX, loadChunkZ + 1))
+                    backward = this[loadChunkX, loadChunkZ + 1].Chunk;
             }
-        }
 
-        private void QueueRecalculationOfNeighbors(int loadChunkX, int loadChunkZ)
-        {
-            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX - 1, loadChunkZ));
-            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX + 1, loadChunkZ));
-            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ - 1));
-            ToRecalculate.Enqueue(new ChunkCoordinate(loadChunkX, loadChunkZ + 1));
+            if (left != null)
+                left.RecalculateVisualGeometry();
+
+            if (right != null)
+                right.RecalculateVisualGeometry();
+
+            if (forward != null)
+                forward.RecalculateVisualGeometry();
+
+            if (backward != null)
+                backward.RecalculateVisualGeometry();
         }
         #endregion
 
@@ -455,7 +457,7 @@ namespace Voxelist.Mapping
                 if (foundChunkToLoad)
                     MakeAndCacheChunk(loadChunkX, loadChunkZ);
 
-                Thread.Sleep(20);
+                Thread.Sleep(10);
             }
         }
 
@@ -533,7 +535,7 @@ namespace Voxelist.Mapping
             {
                 cacheData.CleanAndValidate();
 
-                QueueRecalculationOfNeighbors(loadChunkX, loadChunkZ);
+                RecalculationNeighbors(loadChunkX, loadChunkZ);
             }
         }
         #endregion
@@ -689,7 +691,9 @@ namespace Voxelist.Mapping
                     throw new ArgumentException("Can't modify a chunk we haven't generated!");
 
                 CacheData dat = this[chunkX, chunkZ];
+
                 dat.Chunk[blockX, blockY, blockZ] = newBlock;
+                dat.Chunk.RecalculateVisualGeometry();
 
                 SaveChunk(chunkX, chunkZ);
             }

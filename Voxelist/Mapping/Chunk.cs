@@ -58,12 +58,7 @@ namespace Voxelist.Mapping
         public Block this[int x, int y, int z]
         {
             get { return containedCubes[x, y, z]; }
-
-            set
-            {
-                containedCubes[x, y, z] = value;
-                RecalculateVisualGeometry();
-            }
+            set { containedCubes[x, y, z] = value; }
         }
 
         public IEnumerable<Entity> MakeGeneratedEntities(EntityBuilder builder, WorldManager manager)
@@ -88,10 +83,10 @@ namespace Voxelist.Mapping
             Chunk leftChunk, rightChunk, forwardChunk, backwardChunk;
             LoadNeighborChunks(out leftChunk, out rightChunk, out forwardChunk, out backwardChunk);
 
-            combinedPrimitives = new GeometryPrimitive[BlockHandler.TotalNumberOfTextures];
-            combinedVerticesCount = new int[BlockHandler.TotalNumberOfTextures];
-            combinedTrianglesCount = new int[BlockHandler.TotalNumberOfTextures];
-            usesTextureIndex = new bool[BlockHandler.TotalNumberOfTextures];
+            GeometryPrimitive[] newCombinedPrimitives = new GeometryPrimitive[BlockHandler.TotalNumberOfTextures];
+            int[] newCombinedVerticesCount = new int[BlockHandler.TotalNumberOfTextures];
+            int[] newCombinedTrianglesCount = new int[BlockHandler.TotalNumberOfTextures];
+            bool[] newUsesTextureIndex = new bool[BlockHandler.TotalNumberOfTextures];
 
             float visualXMin = GameConstants.CHUNK_X_WIDTH;
             float visualXMax = 0;
@@ -159,14 +154,22 @@ namespace Voxelist.Mapping
                 GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
                 buildingBlocks.CopyTo(primitivesArray);
 
-                usesTextureIndex[textureIndex] = primitivesArray.Length > 0;
+                newUsesTextureIndex[textureIndex] = primitivesArray.Length > 0;
 
-                if (usesTextureIndex[textureIndex])
+                if (newUsesTextureIndex[textureIndex])
                 {
-                    combinedPrimitives[textureIndex] = GeometryPrimitive.Combine(primitivesArray);
-                    combinedVerticesCount[textureIndex] = combinedPrimitives[textureIndex].Vertices.Length;
-                    combinedTrianglesCount[textureIndex] = combinedPrimitives[textureIndex].Indices.Length / 3;
+                    newCombinedPrimitives[textureIndex] = GeometryPrimitive.Combine(primitivesArray);
+                    newCombinedVerticesCount[textureIndex] = newCombinedPrimitives[textureIndex].Vertices.Length;
+                    newCombinedTrianglesCount[textureIndex] = newCombinedPrimitives[textureIndex].Indices.Length / 3;
                 }
+            }
+
+            lock (this)
+            {
+                combinedPrimitives = newCombinedPrimitives;
+                combinedTrianglesCount = newCombinedTrianglesCount;
+                combinedVerticesCount = newCombinedVerticesCount;
+                usesTextureIndex = newUsesTextureIndex;
             }
         }
 
