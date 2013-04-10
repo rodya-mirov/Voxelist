@@ -123,15 +123,12 @@ namespace Voxelist.Mapping
 
         /// <summary>
         /// How many squares away from, and not including, the center square
-        /// to keep loaded at a time.  The default is ViewRadius+1, and the
-        /// only other obvious choice would be ViewRadius (if cache loading
-        /// becomes a major performance problem, but this will result in
-        /// obvious load times).
+        /// to keep loaded at a time.  The default is ViewRadius.
         /// 
         /// Note this should be constant throughout gameplay; the engine does not
         /// take into account changes to this, and may behave strangely if you do.
         /// </summary>
-        protected virtual int CacheRadius { get { return ViewRadius + 1; } }
+        protected virtual int CacheRadius { get { return ViewRadius; } }
 
         /// <summary>
         /// How much of the Map to generate before play can start.  This is

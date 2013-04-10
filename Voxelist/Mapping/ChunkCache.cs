@@ -48,7 +48,7 @@ namespace Voxelist.Mapping
         }
 
         #region Geometry Recalculation
-        private void RecalculationNeighbors(int loadChunkX, int loadChunkZ)
+        private void RecalculateNeighborGeometry(int loadChunkX, int loadChunkZ)
         {
             Chunk left = null;
             Chunk right = null;
@@ -89,13 +89,16 @@ namespace Voxelist.Mapping
 
         public void ChangeCenterCoordinates(int dx, int dz)
         {
-            int newCenterX = IntendedCenterX + dx;
-            int newCenterZ = IntendedCenterZ + dz;
+            lock (CacheLock)
+            {
+                int newCenterX = IntendedCenterX + dx;
+                int newCenterZ = IntendedCenterZ + dz;
 
-            DespawnFarawayChunks(newCenterX, newCenterZ);
+                DespawnFarawayChunks(newCenterX, newCenterZ);
 
-            IntendedCenterX = newCenterX;
-            IntendedCenterZ = newCenterZ;
+                IntendedCenterX = newCenterX;
+                IntendedCenterZ = newCenterZ;
+            }
         }
 
         private void DespawnFarawayChunks(int newCenterX, int newCenterZ)
@@ -204,9 +207,6 @@ namespace Voxelist.Mapping
         {
             lock (CacheLock)
             {
-                int oldXMin = XMin;
-                int oldZMin = ZMin;
-
                 while (chunkZ < ZMin)
                     addTopRow();
 
@@ -391,21 +391,24 @@ namespace Voxelist.Mapping
 
         public void StartCaching(int centerChunkX, int centerChunkZ, int initialRadius)
         {
-            XMin = centerChunkX - Radius;
-            ZMin = centerChunkZ - Radius;
-
-            IntendedCenterX = centerChunkX;
-            IntendedCenterZ = centerChunkZ;
-
-            for (int chunkX = centerChunkX - initialRadius; chunkX <= centerChunkX + initialRadius; chunkX++)
+            lock (CacheLock)
             {
-                for (int chunkZ = centerChunkZ - initialRadius; chunkZ <= centerChunkZ + initialRadius; chunkZ++)
-                {
-                    ForceAddChunk(chunkX, chunkZ);
-                }
-            }
+                XMin = centerChunkX - Radius;
+                ZMin = centerChunkZ - Radius;
 
-            StartLoaderThread();
+                IntendedCenterX = centerChunkX;
+                IntendedCenterZ = centerChunkZ;
+
+                for (int chunkX = centerChunkX - initialRadius; chunkX <= centerChunkX + initialRadius; chunkX++)
+                {
+                    for (int chunkZ = centerChunkZ - initialRadius; chunkZ <= centerChunkZ + initialRadius; chunkZ++)
+                    {
+                        ForceAddChunk(chunkX, chunkZ);
+                    }
+                }
+
+                StartLoaderThread();
+            }
         }
 
         /// <summary>
@@ -472,12 +475,12 @@ namespace Voxelist.Mapping
         /// <param name="chunkZ"></param>
         private void FindNeededChunk(out bool foundChunkToLoad, out int chunkX, out int chunkZ)
         {
-            //start with dumb starter values in case we don't find anything
-            chunkX = 0;
-            chunkZ = 0;
-
             lock (CacheLock)
             {
+                //start with dumb starter values in case we don't find anything
+                chunkX = 0;
+                chunkZ = 0;
+
                 int centerX = XMin + Radius;
                 int centerZ = ZMin + Radius;
 
@@ -519,23 +522,30 @@ namespace Voxelist.Mapping
         {
             CacheData cacheData;
 
+            int oldXMin, oldZMin;
+
             lock (CacheLock)
             {
                 if (HasSavedChunk(loadChunkX, loadChunkZ))
                     return;
 
                 cacheData = this[loadChunkX, loadChunkZ];
-                if (cacheData.Chunk == null)
-                    cacheData.GiveBlankChunk(BlockHandler, Map);
+
+                oldXMin = XMin;
+                oldZMin = ZMin;
             }
+
+            if (cacheData.Chunk == null)
+                cacheData.GiveBlankChunk(BlockHandler, Map);
 
             cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
 
+            RecalculateNeighborGeometry(loadChunkX, loadChunkZ);
+
             lock (CacheLock)
             {
-                cacheData.CleanAndValidate();
-
-                RecalculationNeighbors(loadChunkX, loadChunkZ);
+                if (oldXMin == XMin && oldZMin == ZMin)
+                    cacheData.CleanAndValidate();
             }
         }
         #endregion
@@ -570,13 +580,16 @@ namespace Voxelist.Mapping
             /// <param name="cache"></param>
             public void Invalidate(int newChunkX, int newChunkZ, ChunkCache cache)
             {
-                if (cache.HasSavedChunk(newChunkX, newChunkZ))
-                    NeedsToBeLoaded = false;
-                else
-                    NeedsToBeLoaded = true;
+                lock (this)
+                {
+                    if (cache.HasSavedChunk(newChunkX, newChunkZ))
+                        NeedsToBeLoaded = false;
+                    else
+                        NeedsToBeLoaded = true;
 
-                EntitiesSpawned = false;
-                TouchingEntities.Clear();
+                    EntitiesSpawned = false;
+                    TouchingEntities.Clear();
+                }
             }
 
             /// <summary>
@@ -585,24 +598,36 @@ namespace Voxelist.Mapping
             /// </summary>
             public void CleanAndValidate()
             {
-                TouchingEntities.Clear();
-                NeedsToBeLoaded = false;
-                EntitiesSpawned = false;
+                lock (this)
+                {
+                    TouchingEntities.Clear();
+                    NeedsToBeLoaded = false;
+                    EntitiesSpawned = false;
+                }
             }
 
             public void Despawn()
             {
-                EntitiesSpawned = false;
+                lock (this)
+                {
+                    EntitiesSpawned = false;
+                }
             }
 
             public void Spawn()
             {
-                EntitiesSpawned = true;
+                lock (this)
+                {
+                    EntitiesSpawned = true;
+                }
             }
 
             public void GiveBlankChunk(BlockHandler handler, Map map)
             {
-                Chunk = new Chunk(handler, map);
+                lock (this)
+                {
+                    Chunk = new Chunk(handler, map);
+                }
             }
         }
         #endregion
@@ -610,73 +635,85 @@ namespace Voxelist.Mapping
         #region Entity Collision Caching
         public void RemoveEntity(Entity entity, int chunkX, int chunkZ)
         {
-            if (HasSavedChunk(chunkX, chunkZ))
+            lock (CacheLock)
             {
-                savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Remove(entity);
-            }
-            else if (IsReady(chunkX, chunkZ))
-            {
-                this[chunkX, chunkZ].TouchingEntities.Remove(entity);
-            }
-            else
-            {
-                throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                if (HasSavedChunk(chunkX, chunkZ))
+                {
+                    savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Remove(entity);
+                }
+                else if (IsReady(chunkX, chunkZ))
+                {
+                    this[chunkX, chunkZ].TouchingEntities.Remove(entity);
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                }
             }
         }
 
         public void AddEntity(Entity entity, int chunkX, int chunkZ)
         {
-            if (HasSavedChunk(chunkX, chunkZ))
+            lock (CacheLock)
             {
-                savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Add(entity);
-            }
-            else if (IsReady(chunkX, chunkZ))
-            {
-                this[chunkX, chunkZ].TouchingEntities.Add(entity);
-            }
-            else
-            {
-                throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                if (HasSavedChunk(chunkX, chunkZ))
+                {
+                    savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities.Add(entity);
+                }
+                else if (IsReady(chunkX, chunkZ))
+                {
+                    this[chunkX, chunkZ].TouchingEntities.Add(entity);
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                }
             }
         }
 
         public IEnumerable<Entity> CachedEntities(int chunkX, int chunkZ)
         {
-            if (HasSavedChunk(chunkX, chunkZ))
+            lock (CacheLock)
             {
-                foreach (Entity e in savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities)
-                    yield return e;
-            }
-            else if (IsReady(chunkX, chunkZ))
-            {
-                foreach (Entity e in this[chunkX, chunkZ].TouchingEntities)
-                    yield return e;
-            }
-            else
-            {
-                throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                if (HasSavedChunk(chunkX, chunkZ))
+                {
+                    foreach (Entity e in savedChunkData[new ChunkCoordinate(chunkX, chunkZ)].TouchingEntities)
+                        yield return e;
+                }
+                else if (IsReady(chunkX, chunkZ))
+                {
+                    foreach (Entity e in this[chunkX, chunkZ].TouchingEntities)
+                        yield return e;
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                }
             }
         }
 
         public IEnumerable<Entity> GenerateAvailableEntities(int chunkX, int chunkZ, EntityBuilder builder, WorldManager manager)
         {
-            //the following is a big block of checks to avoid 
-            if (!IsReady(chunkX, chunkZ))
-                yield break;
+            lock (CacheLock)
+            {
+                //the following is a big block of checks to avoid 
+                if (!IsReady(chunkX, chunkZ))
+                    yield break;
 
-            int dist = Math.Abs(chunkX - IntendedCenterX) + Math.Abs(chunkZ - IntendedCenterZ);
-            if (dist > EntitySpawnRadius)
-                yield break;
+                int dist = Math.Abs(chunkX - IntendedCenterX) + Math.Abs(chunkZ - IntendedCenterZ);
+                if (dist > EntitySpawnRadius)
+                    yield break;
 
-            CacheData dat = this[chunkX, chunkZ];
+                CacheData dat = this[chunkX, chunkZ];
 
-            if (dat.EntitiesSpawned)
-                yield break;
+                if (dat.EntitiesSpawned)
+                    yield break;
 
-            dat.Spawn();
+                dat.Spawn();
 
-            foreach (Entity e in dat.Chunk.MakeGeneratedEntities(builder, manager))
-                yield return e;
+                foreach (Entity e in dat.Chunk.MakeGeneratedEntities(builder, manager))
+                    yield return e;
+            }
         }
         #endregion
 

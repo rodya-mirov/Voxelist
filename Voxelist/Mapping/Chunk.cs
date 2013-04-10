@@ -147,14 +147,11 @@ namespace Voxelist.Mapping
                     }
                 }
 
-                visualBoundingBox = new BoundingBox(
-                    new Vector3(visualXMin, visualYMin, visualZMin),
-                    new Vector3(visualXMax, visualYMax, visualZMax));
 
                 GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
                 buildingBlocks.CopyTo(primitivesArray);
 
-                newUsesTextureIndex[textureIndex] = primitivesArray.Length > 0;
+                newUsesTextureIndex[textureIndex] = (primitivesArray.Length > 0);
 
                 if (newUsesTextureIndex[textureIndex])
                 {
@@ -170,6 +167,10 @@ namespace Voxelist.Mapping
                 combinedTrianglesCount = newCombinedTrianglesCount;
                 combinedVerticesCount = newCombinedVerticesCount;
                 usesTextureIndex = newUsesTextureIndex;
+
+                visualBoundingBox = new BoundingBox(
+                    new Vector3(visualXMin, visualYMin, visualZMin),
+                    new Vector3(visualXMax, visualYMax, visualZMax));
             }
         }
 
