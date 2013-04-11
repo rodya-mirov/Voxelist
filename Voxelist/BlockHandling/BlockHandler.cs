@@ -18,12 +18,16 @@ namespace Voxelist.BlockHandling
     /// </summary>
     public abstract class BlockHandler
     {
-
         protected Game Game;
 
         public virtual void LoadContent(Game game)
         {
             this.Game = game;
+        }
+
+        public virtual void Update(GameTime gametime)
+        {
+            //does nothing
         }
 
         #region Visual Obstruction Flags

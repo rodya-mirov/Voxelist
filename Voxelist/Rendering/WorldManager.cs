@@ -78,6 +78,7 @@ namespace Voxelist.Rendering
         {
             base.Update(gameTime);
 
+            BlockHandler.Update(gameTime);
             Camera.Update(gameTime);
             Map.Update(gameTime);
             ManageGeneratedEntities(gameTime);

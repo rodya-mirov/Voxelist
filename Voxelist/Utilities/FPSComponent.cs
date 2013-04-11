@@ -108,8 +108,10 @@ namespace Voxelist.Utilies
 
             GraphicsDevice.BlendState = blend;
             GraphicsDevice.DepthStencilState = stencil;
-            GraphicsDevice.SamplerStates[0] = sampler;
 
+            if (sampler != null)
+                GraphicsDevice.SamplerStates[0] = sampler;
+    
             base.Draw(gameTime);
         }
     }
