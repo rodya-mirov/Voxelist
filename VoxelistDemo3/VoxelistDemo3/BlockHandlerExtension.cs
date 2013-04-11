@@ -89,18 +89,29 @@ namespace VoxelistDemo3
         }
 
         private static BasicEffect dirtEffect, iceEffect;
-        public override BasicEffect DrawingEffect(int textureID)
+
+        public override Effect DrawingEffect(int textureIndex, Matrix WorldTransform, Matrix ViewTransform, Matrix ProjectionTransform)
         {
-            switch (textureID)
+            BasicEffect output;
+
+            switch (textureIndex)
             {
                 case 0:
-                    return dirtEffect;
+                    output = dirtEffect;
+                    break;
 
                 case 1:
-                    return iceEffect;
+                    output = iceEffect;
+                    break;
 
                 default: throw new NotImplementedException();
             }
+
+            output.World = WorldTransform;
+            output.View = ViewTransform;
+            output.Projection = ProjectionTransform;
+
+            return output;
         }
 
         public override bool IsVisible(Block block)

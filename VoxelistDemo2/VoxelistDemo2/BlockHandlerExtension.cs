@@ -75,9 +75,15 @@ namespace VoxelistDemo2
             return 0;
         }
 
-        public override BasicEffect DrawingEffect(int textureIndex)
+        public override Effect DrawingEffect(int textureIndex, Matrix WorldTransform, Matrix ViewTransform, Matrix ProjectionTransform)
         {
-            return dirtEffect;
+            BasicEffect output = dirtEffect;
+
+            output.World = WorldTransform;
+            output.View = ViewTransform;
+            output.Projection = ProjectionTransform;
+
+            return output;
         }
 
         public override GeometryPrimitive DrawingPrimitive(Block block,

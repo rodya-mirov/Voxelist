@@ -273,11 +273,11 @@ namespace Voxelist.Mapping
             if (!usesTextureIndex[textureIndex])
                 return;
 
-            BasicEffect drawingEffect = BlockHandler.DrawingEffect(textureIndex);
-
-            drawingEffect.World = Matrix.CreateTranslation(drawLocation);
-            drawingEffect.Projection = Camera.ProjectionMatrix;
-            drawingEffect.View = Camera.ViewMatrix;
+            Effect drawingEffect = BlockHandler.DrawingEffect(
+                textureIndex,
+                Matrix.CreateTranslation(drawLocation),
+                Camera.ViewMatrix,
+                Camera.ProjectionMatrix);
 
             foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
             {
