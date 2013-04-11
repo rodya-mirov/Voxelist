@@ -18,12 +18,12 @@ namespace VoxelistDemo1
 
         public override int ViewRadius
         {
-            get { return 7; }
+            get { return 9; }
         }
 
         public override int EntitySpawnRadius
         {
-            get { return 4; }
+            get { return 5; }
         }
 
         public override void MakeChunkData(int chunkX, int chunkZ, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)

@@ -167,9 +167,7 @@ namespace Voxelist.Rendering
         /// <returns></returns>
         public bool EntityFarAway(int chunkX, int chunkZ)
         {
-            int dist = Math.Max(
-                Math.Abs(chunkX - CenterChunkX),
-                Math.Abs(chunkZ - CenterChunkZ));
+            int dist = Math.Abs(chunkX - CenterChunkX) + Math.Abs(chunkZ - CenterChunkZ);
 
             return dist > Map.EntitySpawnRadius;
         }

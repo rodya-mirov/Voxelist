@@ -77,8 +77,13 @@ namespace Voxelist.Utilies
         {
         }
 
+        double averageFrameTime = 0;
+        double averagingWeight = 10.0;
+
         public override void Draw(GameTime gameTime)
         {
+            averageFrameTime = (averagingWeight * averageFrameTime + gameTime.ElapsedGameTime.TotalSeconds) / (averagingWeight + 1.0);
+
             drawsSinceReset++;
             timeSpan += gameTime.ElapsedGameTime;
 
@@ -86,6 +91,8 @@ namespace Voxelist.Utilies
             {
                 drawnFPS = "FPS: " + ((2 * drawsSinceReset).ToString());
                 timeSpan -= interval;
+
+                drawnFPS += "\nFrame Time: " + (averageFrameTime * 1000).ToString(".0") + " ms";
 
                 drawsSinceReset = 0;
             }
