@@ -106,8 +106,11 @@ namespace Voxelist.Utilies
             batch.DrawString(Font, drawnFPS, position1, Color.White);
             batch.End();
 
-            GraphicsDevice.BlendState = blend;
-            GraphicsDevice.DepthStencilState = stencil;
+            if (blend != null)
+                GraphicsDevice.BlendState = blend;
+
+            if (stencil != null)
+                GraphicsDevice.DepthStencilState = stencil;
 
             if (sampler != null)
                 GraphicsDevice.SamplerStates[0] = sampler;

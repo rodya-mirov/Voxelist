@@ -49,6 +49,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	float4 normal = mul(input.Normal, WorldInverseTranspose);
 	float lightIntensity = -dot(normal, DiffuseLightDirection);
 	output.Color = saturate(DiffuseColor * DiffuseIntensity * lightIntensity) + saturate(AmbientColor * AmbientIntensity);
+	output.Color.a = 1;
 
 	output.TextureCoordinate = input.TextureCoordinate;
 
@@ -58,7 +59,6 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
 	float4 textureColor = tex2D(textureSampler, input.TextureCoordinate);
-	textureColor.a = 1;
 
 	return saturate(textureColor * input.Color);
 }
@@ -67,6 +67,10 @@ technique Lighting
 {
 	pass Pass1
 	{
+		AlphaBlendEnable = TRUE;
+        DestBlend = INVSRCALPHA;
+        SrcBlend = SRCALPHA;
+
 		VertexShader = compile vs_2_0 VertexShaderFunction();
 		PixelShader = compile ps_2_0 PixelShaderFunction();
 	}
