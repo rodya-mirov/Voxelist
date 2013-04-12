@@ -65,7 +65,7 @@ namespace VoxelistDemo2
             else
                 lightingEffect.Parameters["DiffuseIntensity"].SetValue(.7f);
 
-            float ambientLightAmount = MathHelper.SmoothStep(.1f, .6f, MathHelper.Clamp(sunLocation.Y + 0.2f, 0, 1));
+            float ambientLightAmount = MathHelper.SmoothStep(.2f, .6f, MathHelper.Clamp(sunLocation.Y + 0.2f, 0, 1));
             lightingEffect.Parameters["AmbientIntensity"].SetValue(ambientLightAmount);
         }
 

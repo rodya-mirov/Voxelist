@@ -540,13 +540,13 @@ namespace Voxelist.Mapping
 
             cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
 
-            RecalculateNeighborGeometry(loadChunkX, loadChunkZ);
-
             lock (CacheLock)
             {
                 if (oldXMin == XMin && oldZMin == ZMin)
                     cacheData.CleanAndValidate();
             }
+
+            RecalculateNeighborGeometry(loadChunkX, loadChunkZ);
         }
         #endregion
 
