@@ -61,13 +61,20 @@ namespace Voxelist.Rendering
             base.Initialize();
         }
 
+        protected virtual VoxelistEffectWrapper MakeEffectWrapper()
+        {
+            BasicEffect basicEffect = new BasicEffect(GraphicsDevice);
+            basicEffect.TextureEnabled = true;
+            basicEffect.EnableDefaultLighting();
+
+            return new BasicEffectWrapper(basicEffect);
+        }
+
         protected override void LoadContent()
         {
             base.LoadContent();
 
-            drawingEffect = new BasicEffect(GraphicsDevice);
-            drawingEffect.TextureEnabled = true;
-            drawingEffect.EnableDefaultLighting();
+            drawingEffectWrapper = MakeEffectWrapper();
 
             BlockHandler.LoadContent(Game);
             EntityBuilder.LoadContent(Game);
@@ -150,12 +157,12 @@ namespace Voxelist.Rendering
             DrawScene(gameTime);
         }
 
-        protected BasicEffect drawingEffect;
+        protected VoxelistEffectWrapper drawingEffectWrapper;
 
         private void DrawScene(GameTime gameTime)
         {
-            drawingEffect.Projection = Camera.ProjectionMatrix;
-            drawingEffect.View = Camera.ViewMatrix;
+            drawingEffectWrapper.Projection = Camera.ProjectionMatrix;
+            drawingEffectWrapper.View = Camera.ViewMatrix;
 
             drawMap();
             drawEntities();
@@ -163,13 +170,15 @@ namespace Voxelist.Rendering
 
         private void drawEntities()
         {
+            Effect drawingEffect = drawingEffectWrapper.Effect;
+
             foreach (Entity entity in Entities())
             {
                 if (!entity.ShouldBeDrawn())
                     continue;
 
-                drawingEffect.World = Matrix.CreateTranslation(Camera.objectTranslation(entity.Position) + entity.DrawingOffset);
-                drawingEffect.Texture = entity.DrawableTexture;
+                drawingEffectWrapper.World = Matrix.CreateTranslation(Camera.objectTranslation(entity.Position) + entity.DrawingOffset);
+                drawingEffectWrapper.Texture = entity.DrawableTexture;
 
                 switch (entity.DrawingType)
                 {
@@ -195,13 +204,15 @@ namespace Voxelist.Rendering
 
         private void drawMap()
         {
+            Effect drawingEffect = drawingEffectWrapper.Effect;
+
             for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
             {
-                drawingEffect.Texture = BlockHandler.Texture(textureIndex);
+                drawingEffectWrapper.Texture = BlockHandler.Texture(textureIndex);
 
                 foreach (Tuple<Vector3, GeometryPrimitive> offsetChunkPrimitive in Map.ChunksToDraw(textureIndex))
                 {
-                    drawingEffect.World = Matrix.CreateTranslation(offsetChunkPrimitive.Item1);
+                    drawingEffectWrapper.World = Matrix.CreateTranslation(offsetChunkPrimitive.Item1);
                     GeometryPrimitive primitive = offsetChunkPrimitive.Item2;
 
                     foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)

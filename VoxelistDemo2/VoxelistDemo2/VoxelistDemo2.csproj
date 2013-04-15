@@ -109,6 +109,7 @@
   <ItemGroup>
     <Compile Include="BlockHandlerExtension.cs" />
     <Compile Include="EntityBuilderExtension.cs" />
+    <Compile Include="LightingEffectExtension.cs" />
     <Compile Include="PlayerAvatar.cs" />
     <Compile Include="MapExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
