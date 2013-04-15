@@ -7,6 +7,8 @@ using Voxelist.Mapping;
 using Voxelist.BlockHandling;
 using Voxelist.Entities;
 using Voxelist.Utilities;
+using Microsoft.Xna.Framework.Graphics;
+using Voxelist.GeometryPrimitives;
 
 namespace Voxelist.Rendering
 {
@@ -16,17 +18,13 @@ namespace Voxelist.Rendering
         private BlockHandler BlockHandler { get; set; }
         private EntityBuilder EntityBuilder { get; set; }
 
-        private Skybox Skybox { get; set; }
-
-        public WorldManager(Game game, Map map, BlockHandler handler, EntityBuilder entityBuilder, string SkyboxTextureLocation)
+        public WorldManager(Game game, Map map, BlockHandler handler, EntityBuilder entityBuilder)
             : base(game)
         {
             this.Map = map;
 
             this.BlockHandler = handler;
             this.EntityBuilder = entityBuilder;
-
-            this.Skybox = new Skybox(SkyboxTextureLocation);
         }
 
         private Queue<Entity> generatedInteractiveEntities = new Queue<Entity>();
@@ -67,11 +65,14 @@ namespace Voxelist.Rendering
         {
             base.LoadContent();
 
+            drawingEffect = new BasicEffect(GraphicsDevice);
+            drawingEffect.TextureEnabled = true;
+            drawingEffect.EnableDefaultLighting();
+
             BlockHandler.LoadContent(Game);
             EntityBuilder.LoadContent(Game);
 
             Map.LoadContent(Game);
-            Skybox.LoadContent(Game);
         }
 
         public override void Update(GameTime gameTime)
@@ -146,16 +147,73 @@ namespace Voxelist.Rendering
         {
             base.Draw(gameTime);
 
-            Map.Draw();
+            DrawScene(gameTime);
+        }
 
+        protected BasicEffect drawingEffect;
+
+        private void DrawScene(GameTime gameTime)
+        {
+            drawingEffect.Projection = Camera.ProjectionMatrix;
+            drawingEffect.View = Camera.ViewMatrix;
+
+            drawMap();
+            drawEntities();
+        }
+
+        private void drawEntities()
+        {
             foreach (Entity entity in Entities())
             {
-                if (entity.ShouldBeDrawn())
-                    entity.Draw(gameTime);
-            }
+                if (!entity.ShouldBeDrawn())
+                    continue;
 
-            if (Skybox != null)
-                Skybox.Draw();
+                drawingEffect.World = Matrix.CreateTranslation(Camera.objectTranslation(entity.Position) + entity.DrawingOffset);
+                drawingEffect.Texture = entity.DrawableTexture;
+
+                switch (entity.DrawingType)
+                {
+                    case Entity.DrawType.GeometryPrimitive:
+
+                        GeometryPrimitive primitive = entity.DrawableGeometryPrimitive;
+                        foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
+                        {
+                            pass.Apply();
+
+                            drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
+                                PrimitiveType.TriangleList,
+                                primitive.Vertices, 0, primitive.Vertices.Length,
+                                primitive.Indices, 0, primitive.Indices.Length / 3);
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+        }
+
+        private void drawMap()
+        {
+            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
+            {
+                drawingEffect.Texture = BlockHandler.Texture(textureIndex);
+
+                foreach (Tuple<Vector3, GeometryPrimitive> offsetChunkPrimitive in Map.ChunksToDraw(textureIndex))
+                {
+                    drawingEffect.World = Matrix.CreateTranslation(offsetChunkPrimitive.Item1);
+                    GeometryPrimitive primitive = offsetChunkPrimitive.Item2;
+
+                    foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+
+                        drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.TriangleList,
+                            primitive.Vertices, 0, primitive.Vertices.Length,
+                            primitive.Indices, 0, primitive.Indices.Length / 3);
+                    }
+                }
+            }
         }
 
         #region Map Method Forwarding

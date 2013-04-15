@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Voxelist.Rendering;
 using Voxelist.Mapping;
 using Voxelist.Utilities;
+using Voxelist.GeometryPrimitives;
 
 namespace Voxelist.Entities
 {
@@ -542,7 +543,14 @@ namespace Voxelist.Entities
             return !Camera.IsOffScreen(visualBoundingBox);
         }
 
-        public abstract void Draw(GameTime gametime);
+        public abstract Vector3 DrawingOffset { get; }
+        public abstract DrawType DrawingType { get; }
+        public abstract Texture2D DrawableTexture { get; }
+
+        public virtual GeometryPrimitive DrawableGeometryPrimitive { get { throw new NotImplementedException(); } }
+        public virtual Model DrawableModel { get { throw new NotImplementedException(); } }
+
+        public enum DrawType { GeometryPrimitive, Model }
         #endregion
     }
 }

@@ -25,58 +25,22 @@ namespace VoxelistDemo2
         }
 
         private GeometryPrimitive[] primitives; //first index is blockID, second is the drawing flags
-        private BasicEffect dirtEffect;
-        private Effect lightingEffect;
+
+        private Texture2D[] textures;
 
         public override void LoadContent(Game game)
         {
             base.LoadContent(game);
 
-            lightingEffect = Game.Content.Load<Effect>("Effects/CustomLighting");
-            lightingEffect.Parameters["EffectTexture"].SetValue(Game.Content.Load<Texture>("Textures/Cubes/Dirt"));
-
-            loadDirtEffect(game);
+            textures = new Texture2D[1];
+            textures[0] = Game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
 
             loadPrimitives();
         }
 
-        public override void Update(GameTime gametime)
+        public override Texture2D Texture(int textureIndex)
         {
-            base.Update(gametime);
-
-            updateSunPosition(gametime);
-        }
-
-        private double sunAngle = 0;
-
-        private void updateSunPosition(GameTime gametime)
-        {
-            sunAngle += .2 * gametime.ElapsedGameTime.TotalSeconds;
-
-            while (sunAngle > Math.PI)
-                sunAngle -= MathHelper.TwoPi;
-
-            Vector3 sunLocation = Vector3.Forward + Vector3.Transform(Vector3.Up, Matrix.CreateRotationZ((float)sunAngle));
-            Vector3 sunDirection = -sunLocation / sunLocation.Length();
-            lightingEffect.Parameters["DiffuseLightDirection"].SetValue(sunDirection);
-
-            if (sunDirection.Y > 0)
-                lightingEffect.Parameters["DiffuseIntensity"].SetValue(0);
-            else
-                lightingEffect.Parameters["DiffuseIntensity"].SetValue(.7f);
-
-            float ambientLightAmount = MathHelper.SmoothStep(.2f, .6f, MathHelper.Clamp(sunLocation.Y + 0.2f, 0, 1));
-            lightingEffect.Parameters["AmbientIntensity"].SetValue(ambientLightAmount);
-        }
-
-        private void loadDirtEffect(Game game)
-        {
-            dirtEffect = new BasicEffect(game.GraphicsDevice);
-
-            dirtEffect.TextureEnabled = true;
-            dirtEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
-
-            dirtEffect.EnableDefaultLighting();
+            return textures[0];
         }
 
         private void loadPrimitives()
@@ -116,30 +80,6 @@ namespace VoxelistDemo2
         public override int TextureIndex(Block block)
         {
             return 0;
-        }
-
-        public override Effect DrawingEffect(int textureIndex, Matrix WorldTransform, Matrix ViewTransform, Matrix ProjectionTransform)
-        {
-            Effect output = lightingEffect;
-
-            output.Parameters["World"].SetValue(WorldTransform);
-            output.Parameters["View"].SetValue(ViewTransform);
-            output.Parameters["Projection"].SetValue(ProjectionTransform);
-
-            output.Parameters["WorldInverseTranspose"].SetValue(Matrix.Transpose(Matrix.Invert(WorldTransform)));
-
-            return output;
-        }
-
-        private Effect alteredDirtEffect(Matrix WorldTransform, Matrix ViewTransform, Matrix ProjectionTransform)
-        {
-            BasicEffect output = dirtEffect;
-
-            output.World = WorldTransform;
-            output.View = ViewTransform;
-            output.Projection = ProjectionTransform;
-
-            return output;
         }
 
         public override GeometryPrimitive DrawingPrimitive(Block block,

@@ -106,7 +106,6 @@
     <Compile Include="GeometryPrimitives\GeometryPrimitive.cs" />
     <Compile Include="Mapping\ChunkCache.cs" />
     <Compile Include="Utilities\GameConstants.cs" />
-    <Compile Include="Rendering\Skybox.cs" />
     <Compile Include="Utilities\Enums.cs" />
     <Compile Include="Utilities\Point3.cs" />
     <Compile Include="Rendering\WorldManager.cs" />

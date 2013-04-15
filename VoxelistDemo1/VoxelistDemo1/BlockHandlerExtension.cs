@@ -51,10 +51,14 @@ namespace VoxelistDemo1
         {
             base.LoadContent(game);
 
-            setupDrawingEffects(game);
+            textures = new Texture2D[2];
+            textures[0] = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
+            textures[1] = game.Content.Load<Texture2D>("Textures/Cubes/Ice");
         }
 
         #region Drawing Data
+        private Texture2D[] textures;
+
         public override int TotalNumberOfTextures
         {
             get { return 2; }
@@ -75,42 +79,9 @@ namespace VoxelistDemo1
             }
         }
 
-        private static void setupDrawingEffects(Game game)
+        public override Texture2D Texture(int textureIndex)
         {
-            dirtEffect = new BasicEffect(game.GraphicsDevice);
-            dirtEffect.TextureEnabled = true;
-            dirtEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
-            dirtEffect.EnableDefaultLighting();
-
-            iceEffect = new BasicEffect(game.GraphicsDevice);
-            iceEffect.TextureEnabled = true;
-            iceEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Ice");
-            iceEffect.EnableDefaultLighting();
-        }
-
-        private static BasicEffect dirtEffect, iceEffect;
-        public override Effect DrawingEffect(int textureIndex, Matrix WorldTransform, Matrix ViewTransform, Matrix ProjectionTransform)
-        {
-            BasicEffect output;
-
-            switch (textureIndex)
-            {
-                case 0:
-                    output = dirtEffect;
-                    break;
-
-                case 1:
-                    output = iceEffect;
-                    break;
-
-                default: throw new NotImplementedException();
-            }
-
-            output.World = WorldTransform;
-            output.View = ViewTransform;
-            output.Projection = ProjectionTransform;
-
-            return output;
+            return textures[textureIndex];
         }
 
         public override bool IsVisible(Block block)

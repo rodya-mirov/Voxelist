@@ -13,10 +13,8 @@ namespace VoxelistDemo1
 {
     public class WorldManagerExtension : WorldManager
     {
-        private const string SkyboxTextureLocation = "Textures/Skyboxes/SkyboxGraphics";
-
         public WorldManagerExtension(Game game, MapExtension map, BlockHandlerExtension handler, EntityBuilderExtension builder)
-            : base(game, map, handler, builder, SkyboxTextureLocation)
+            : base(game, map, handler, builder)
         {
         }
 

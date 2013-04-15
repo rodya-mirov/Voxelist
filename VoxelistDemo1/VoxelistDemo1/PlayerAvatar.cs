@@ -8,6 +8,7 @@ using Voxelist.Entities;
 using Voxelist.Mapping;
 using Voxelist.Rendering;
 using Voxelist.Utilities;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace VoxelistDemo1
 {
@@ -156,9 +157,19 @@ namespace VoxelistDemo1
             base.physicsUpdate(gametime);
         }
 
-        public override void Draw(GameTime gametime)
+        public override Texture2D DrawableTexture
         {
-            throw new NotImplementedException();
+            get { throw new NotImplementedException(); }
+        }
+
+        public override Entity.DrawType DrawingType
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public override Vector3 DrawingOffset
+        {
+            get { throw new NotImplementedException(); }
         }
     }
 }

@@ -28,9 +28,7 @@ namespace VoxelistDemo3
         private PlayerAvatar parent;
 
         private static GeometryPrimitive entityPrimitive;
-        private static int numVertices, numTriangles;
-
-        private static BasicEffect drawingEffect;
+        private static Texture2D texture;
 
         private const float buffer = 0.125f;
         private const float size = 1f - 2f * (buffer);
@@ -44,17 +42,8 @@ namespace VoxelistDemo3
                 Vector3.One * buffer, Vector3.One * size,
                 Vector2.Zero, new Vector2(1.0f, 1.0f),
                 true, true, true, true, true, true);
-            numVertices = 24;
-            numTriangles = 12;
 
-            drawingEffect = new BasicEffect(game.GraphicsDevice);
-
-            drawingEffect.TextureEnabled = true;
-            drawingEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
-
-            //Turns them blackish and shiny, makes em stand out
-            drawingEffect.DiffuseColor = Color.BlueViolet.ToVector3();
-            drawingEffect.EnableDefaultLighting();
+            texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
         }
 
         #region Physics (we're turning them all off :))
@@ -168,31 +157,6 @@ namespace VoxelistDemo3
             }
         }
 
-        public bool HasFixedPosition { get; private set; }
-        public override bool IsVisible { get { return HasFixedPosition && WantVisible; } }
-        public bool WantVisible { get; set; }
-
-        public override void Draw(GameTime gametime)
-        {
-            drawingEffect.World = Matrix.CreateTranslation(Camera.objectTranslation(Position));
-
-            drawingEffect.View = Camera.ViewMatrix;
-            drawingEffect.Projection = Camera.ProjectionMatrix;
-
-            foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-
-                drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
-                    PrimitiveType.TriangleList,
-                    entityPrimitive.Vertices,
-                    0, numVertices,
-                    entityPrimitive.Indices,
-                    0, numTriangles
-                    );
-            }
-        }
-
         public void SaveFixedBlock()
         {
             if (!HasFixedPosition)
@@ -201,6 +165,30 @@ namespace VoxelistDemo3
             map.ChangeBlock(fixedChunkCoordinate.X, fixedChunkCoordinate.Z,
                 fixedBlockCoordinate.X, fixedBlockCoordinate.Y, fixedBlockCoordinate.Z,
                 new Block(1));
+        }
+
+        public bool HasFixedPosition { get; private set; }
+        public override bool IsVisible { get { return HasFixedPosition && WantVisible; } }
+        public bool WantVisible { get; set; }
+
+        public override GeometryPrimitive DrawableGeometryPrimitive
+        {
+            get { return entityPrimitive; }
+        }
+
+        public override Texture2D DrawableTexture
+        {
+            get { return texture; }
+        }
+
+        public override Entity.DrawType DrawingType
+        {
+            get { return DrawType.GeometryPrimitive; }
+        }
+
+        public override Vector3 DrawingOffset
+        {
+            get { return Vector3.Zero; }
         }
     }
 }

@@ -229,7 +229,7 @@ namespace Voxelist.BlockHandling
         #region Drawing Data
         public abstract int TotalNumberOfTextures { get; }
 
-        public abstract Effect DrawingEffect(int textureIndex, Matrix WorldTransform, Matrix ViewTransform, Matrix ProjectionTransform);
+        public abstract Texture2D Texture(int textureIndex);
 
         public abstract int TextureIndex(Block block);
 

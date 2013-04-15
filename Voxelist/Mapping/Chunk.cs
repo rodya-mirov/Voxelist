@@ -253,6 +253,27 @@ namespace Voxelist.Mapping
         }
         #endregion
 
+        public bool ShouldDraw(Vector3 drawLocation, int textureIndex)
+        {
+            if (!usesTextureIndex[textureIndex])
+                return false;
+
+            BoundingBox visualBounds = new BoundingBox(
+                   drawLocation + visualBoundingBox.Min,
+                   drawLocation + visualBoundingBox.Max);
+
+            if (Camera.IsOffScreen(visualBounds))
+                return false;
+
+            return true;
+        }
+
+        public GeometryPrimitive DrawablePrimitive(int textureIndex)
+        {
+            return combinedPrimitives[textureIndex];
+        }
+        /*
+
         /// <summary>
         /// Draws this Chunk of blocks at the specified location.
         /// The supplied location should be the minimal corner of
@@ -281,8 +302,6 @@ namespace Voxelist.Mapping
 
             foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
             {
-                pass.Apply();
-
                 drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
                     PrimitiveType.TriangleList,
                     combinedPrimitives[textureIndex].Vertices,
@@ -291,6 +310,6 @@ namespace Voxelist.Mapping
                     0, combinedTrianglesCount[textureIndex]
                     );
             }
-        }
+        }*/
     }
 }

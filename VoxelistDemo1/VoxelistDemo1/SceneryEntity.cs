@@ -20,9 +20,7 @@ namespace VoxelistDemo1
         }
 
         private static GeometryPrimitive entityPrimitive;
-        private static int numVertices, numTriangles;
-
-        private static BasicEffect drawingEffect;
+        private static Texture2D texture;
 
         private const float buffer = 0.25f;
         private const float size = 1.0f - 2.0f * buffer;
@@ -33,17 +31,8 @@ namespace VoxelistDemo1
                 Vector3.One * buffer, Vector3.One * size,
                 Vector2.Zero, new Vector2(1.0f, 1.0f),
                 true, true, true, true, true, true);
-            numVertices = 24;
-            numTriangles = 12;
 
-            drawingEffect = new BasicEffect(game.GraphicsDevice);
-
-            drawingEffect.TextureEnabled = true;
-            drawingEffect.Texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
-
-            //Turns them blackish and shiny, makes em stand out
-            drawingEffect.DiffuseColor = Color.AntiqueWhite.ToVector3();
-            drawingEffect.EnableDefaultLighting();
+            texture = game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
         }
 
         protected override Vector3 GroundIntendedVelocity
@@ -93,25 +82,24 @@ namespace VoxelistDemo1
             base.physicsUpdate(gametime);
         }
 
-        public override void Draw(GameTime gametime)
+        public override GeometryPrimitive DrawableGeometryPrimitive
         {
-            drawingEffect.World = Matrix.CreateTranslation(Camera.objectTranslation(Position));
+            get { return entityPrimitive; }
+        }
 
-            drawingEffect.View = Camera.ViewMatrix;
-            drawingEffect.Projection = Camera.ProjectionMatrix;
+        public override Texture2D DrawableTexture
+        {
+            get { return texture; }
+        }
 
-            foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
+        public override Entity.DrawType DrawingType
+        {
+            get { return DrawType.GeometryPrimitive; }
+        }
 
-                drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
-                    PrimitiveType.TriangleList,
-                    entityPrimitive.Vertices,
-                    0, numVertices,
-                    entityPrimitive.Indices,
-                    0, numTriangles
-                    );
-            }
+        public override Vector3 DrawingOffset
+        {
+            get { return Vector3.Zero; }
         }
     }
 }

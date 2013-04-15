@@ -7,6 +7,7 @@ using Voxelist.BlockHandling;
 using Voxelist.Utilities;
 using Voxelist.Rendering;
 using Voxelist.Entities;
+using Voxelist.GeometryPrimitives;
 
 namespace Voxelist.Mapping
 {
@@ -194,31 +195,28 @@ namespace Voxelist.Mapping
         /// <summary>
         /// Draws the Map using the data from the Camera.
         /// </summary>
-        public void Draw()
+        public IEnumerable<Tuple<Vector3, GeometryPrimitive>> ChunksToDraw(int textureIndex)
         {
             int centerChunkX = CenterChunkX;
             int centerChunkZ = CenterChunkZ;
 
             Vector3 translation = Vector3.Zero;
 
-            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
+            for (int chunkOffsetX = -ViewRadius; chunkOffsetX <= ViewRadius; chunkOffsetX++)
             {
-                for (int chunkOffsetX = -ViewRadius; chunkOffsetX <= ViewRadius; chunkOffsetX++)
+                translation.X = chunkOffsetX * GameConstants.CHUNK_X_WIDTH;
+
+                for (int chunkOffsetZ = -ViewRadius; chunkOffsetZ <= ViewRadius; chunkOffsetZ++)
                 {
-                    translation.X = chunkOffsetX * GameConstants.CHUNK_X_WIDTH;
+                    translation.Z = chunkOffsetZ * GameConstants.CHUNK_Z_LENGTH;
 
-                    for (int chunkOffsetZ = -ViewRadius; chunkOffsetZ <= ViewRadius; chunkOffsetZ++)
-                    {
-                        translation.Z = chunkOffsetZ * GameConstants.CHUNK_Z_LENGTH;
+                    int chunkX = chunkOffsetX + centerChunkX;
+                    int chunkZ = chunkOffsetZ + centerChunkZ;
 
-                        int chunkX = chunkOffsetX + centerChunkX;
-                        int chunkZ = chunkOffsetZ + centerChunkZ;
+                    Chunk drawableChunk = GetChunk(chunkX, chunkZ, false, true);
 
-                        Chunk drawableChunk = GetChunk(chunkX, chunkZ, false, true);
-
-                        if (drawableChunk != null)
-                            drawableChunk.Draw(translation, textureIndex);
-                    }
+                    if (drawableChunk != null && drawableChunk.ShouldDraw(translation, textureIndex))
+                        yield return new Tuple<Vector3, GeometryPrimitive>(translation, drawableChunk.DrawablePrimitive(textureIndex));
                 }
             }
         }
