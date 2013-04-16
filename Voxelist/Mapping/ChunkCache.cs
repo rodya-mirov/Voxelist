@@ -372,7 +372,7 @@ namespace Voxelist.Mapping
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
         /// <returns></returns>
-        public Chunk GetChunk(int chunkX, int chunkZ)
+        private Chunk GetChunk(int chunkX, int chunkZ)
         {
             lock (CacheLock)
             {
@@ -386,6 +386,36 @@ namespace Voxelist.Mapping
                     else
                         return dat.Chunk;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets the chunk at the specified coordinate, if it's ready.  If urgent,
+        /// will add in the chunk immediately; if not, but requested, will put in
+        /// the request.  If the chunk is not ready after this, returns null.
+        /// </summary>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <param name="urgent"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public Chunk GetChunk(int chunkX, int chunkZ, bool urgent, bool request)
+        {
+            lock (CacheLock)
+            {
+                if (IsReady(chunkX, chunkZ))
+                    return this[chunkX, chunkZ].Chunk;
+
+                if (urgent)
+                {
+                    ForceAddChunk(chunkX, chunkZ);
+                    return this[chunkX, chunkZ].Chunk;
+                }
+
+                if (request)
+                    Request(chunkX, chunkZ);
+                
+                return null;
             }
         }
 

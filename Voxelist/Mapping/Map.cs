@@ -150,21 +150,7 @@ namespace Voxelist.Mapping
         /// <returns></returns>
         public Chunk GetChunk(int chunkX, int chunkZ, bool urgent, bool shouldRequest)
         {
-            if (Cache.IsReady(chunkX, chunkZ))
-                return Cache.GetChunk(chunkX, chunkZ);
-
-            if (shouldRequest)
-                Cache.Request(chunkX, chunkZ);
-
-            if (urgent)
-            {
-                Cache.ForceAddChunk(chunkX, chunkZ);
-                return Cache.GetChunk(chunkX, chunkZ);
-            }
-            else
-            {
-                return null;
-            }
+            return Cache.GetChunk(chunkX, chunkZ, urgent, shouldRequest);
         }
 
         private Block GetHighPriorityBlock(int chunkX, int chunkZ, int cubeX, int cubeY, int cubeZ)
