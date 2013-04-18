@@ -19,14 +19,12 @@ namespace Voxelist.Mapping
     public class ChunkCache
     {
         private Map Map { get; set; }
-        private BlockHandler BlockHandler { get; set; }
 
         private int EntitySpawnRadius { get { return Map.EntitySpawnRadius; } }
 
-        public ChunkCache(Map map, BlockHandler handler, int cacheRadius)
+        public ChunkCache(Map map, int cacheRadius)
         {
             this.Map = map;
-            this.BlockHandler = handler;
 
             this.Radius = cacheRadius;
 
@@ -566,7 +564,7 @@ namespace Voxelist.Mapping
             }
 
             if (cacheData.Chunk == null)
-                cacheData.GiveBlankChunk(BlockHandler, Map);
+                cacheData.GiveBlankChunk(Map);
 
             cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
 
@@ -652,11 +650,11 @@ namespace Voxelist.Mapping
                 }
             }
 
-            public void GiveBlankChunk(BlockHandler handler, Map map)
+            public void GiveBlankChunk(Map map)
             {
                 lock (this)
                 {
-                    Chunk = new Chunk(handler, map);
+                    Chunk = new Chunk(map);
                 }
             }
         }
@@ -722,7 +720,7 @@ namespace Voxelist.Mapping
             }
         }
 
-        public IEnumerable<Entity> GenerateAvailableEntities(int chunkX, int chunkZ, EntityBuilder builder, WorldManager manager)
+        public IEnumerable<Entity> GenerateAvailableEntities(int chunkX, int chunkZ, WorldManager manager)
         {
             lock (CacheLock)
             {
@@ -741,7 +739,7 @@ namespace Voxelist.Mapping
 
                 dat.Spawn();
 
-                foreach (Entity e in dat.Chunk.MakeGeneratedEntities(builder, manager))
+                foreach (Entity e in dat.Chunk.MakeGeneratedEntities(manager))
                     yield return e;
             }
         }

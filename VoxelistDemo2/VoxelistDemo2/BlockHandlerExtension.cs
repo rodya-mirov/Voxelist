@@ -22,23 +22,22 @@ namespace VoxelistDemo2
         public BlockHandlerExtension()
             : base()
         {
+            loadPrimitives();
         }
 
         private GeometryPrimitive[] primitives; //first index is blockID, second is the drawing flags
 
         private Texture2D[] textures;
 
-        public override void LoadContent(Game game)
+        protected override void loadContent(Game game)
         {
-            base.LoadContent(game);
+            base.loadContent(game);
 
             textures = new Texture2D[1];
             textures[0] = Game.Content.Load<Texture2D>("Textures/Cubes/Dirt");
-
-            loadPrimitives();
         }
 
-        public override Texture2D Texture(int textureIndex)
+        protected override Texture2D texture(int textureIndex)
         {
             return textures[0];
         }
@@ -72,17 +71,17 @@ namespace VoxelistDemo2
             }
         }
 
-        public override int TotalNumberOfTextures
+        protected override int totalNumberOfTextures
         {
             get { return 1; }
         }
 
-        public override int TextureIndex(Block block)
+        protected override int textureIndex(Block block)
         {
             return 0;
         }
 
-        public override GeometryPrimitive DrawingPrimitive(Block block,
+        protected override GeometryPrimitive drawingPrimitive(Block block,
             bool includeFrontFace, bool includeBackFace,
             bool includeTopFace, bool includeBottomFace,
             bool includeLeftFace, bool includeRightFace)
@@ -95,22 +94,22 @@ namespace VoxelistDemo2
             return primitives[flag];
         }
 
-        public override bool IsPassable(Block block)
+        protected override bool isPassable(Block block)
         {
             return block.blockID == 0;
         }
 
-        public override float Friction(Block block)
+        protected override float friction(Block block)
         {
             return 20f;
         }
 
-        public override Vector3 FrictionVelocity(Block block)
+        protected override Vector3 frictionVelocity(Block block)
         {
             return Vector3.Zero;
         }
 
-        public override bool IsVisible(Block block)
+        protected override bool isVisible(Block block)
         {
             return block.blockID != 0;
         }

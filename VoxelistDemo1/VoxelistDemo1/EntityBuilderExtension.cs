@@ -17,15 +17,15 @@ namespace VoxelistDemo1
         {
         }
 
-        public override void LoadContent(Game game)
+        protected override void loadContent(Game game)
         {
-            base.LoadContent(game);
+            base.loadContent(game);
 
             ScootBlock.LoadContent(game);
             SceneryEntity.LoadContent(game);
         }
 
-        public override Entity MakeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
+        protected override Entity makeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
         {
             WorldPosition position = new WorldPosition(
                 chunkX, chunkZ, schema.inChunkX, schema.inChunkY, schema.inChunkZ);

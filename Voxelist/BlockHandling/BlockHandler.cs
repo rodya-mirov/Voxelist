@@ -13,25 +13,34 @@ namespace Voxelist.BlockHandling
     /// <summary>
     /// This is intended basically as a lookup table for Block data.
     /// At a minimum, one must be able to turn Blocks into drawing
-    /// data (models, bone transforms, and relevant transformations),
-    /// as well as the real basic fact: whether the block exists at all.
+    /// data as well as the real basic fact: whether the block exists at all.
+    /// 
+    /// This is a singleton class.  There should never be a need to make
+    /// more than one of these!
     /// </summary>
     public abstract class BlockHandler
     {
-        protected Game Game;
+        private static BlockHandler instance = null;
 
-        public virtual void LoadContent(Game game)
+        protected BlockHandler()
+        {
+            if (instance != null)
+                throw new InvalidProgramException("Can't instantiate two BlockHandlers!");
+
+            instance = this;
+        }
+
+        protected Game Game { get; private set; }
+
+        public static void LoadContent(Game game) { instance.loadContent(game); }
+
+        protected virtual void loadContent(Game game)
         {
             this.Game = game;
         }
 
-        public virtual void Update(GameTime gametime)
-        {
-            //does nothing
-        }
-
         #region Visual Obstruction Flags
-        public static int ConvertBoolFlagsToInt(
+        protected static int ConvertBoolFlagsToInt(
             bool includeFrontFace, bool includeBackFace,
             bool includeTopFace, bool includeBottomFace,
             bool includeLeftFace, bool includeRightFace
@@ -48,7 +57,7 @@ namespace Voxelist.BlockHandling
             return i;
         }
 
-        public static void ConvertIntToBoolFlags(int input,
+        protected static void ConvertIntToBoolFlags(int input,
             out bool includeFrontFace, out bool includeBackFace,
             out bool includeTopFace, out bool includeBottomFace,
             out bool includeLeftFace, out bool includeRightFace
@@ -79,10 +88,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public virtual bool IsFullAndOpaqueToTheRight(Block block)
+        protected virtual bool isFullAndOpaqueToTheRight(Block block)
         {
-            return IsVisible(block);
+            return instance.isVisible(block);
         }
+
+        public static bool IsFullAndOpaqueToTheRight(Block block) { return instance.isFullAndOpaqueToTheRight(block); }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -101,10 +112,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public virtual bool IsFullAndOpaqueToTheLeft(Block block)
+        protected virtual bool isFullAndOpaqueToTheLeft(Block block)
         {
-            return IsVisible(block);
+            return instance.isVisible(block);
         }
+
+        public static bool IsFullAndOpaqueToTheLeft(Block block) { return instance.isFullAndOpaqueToTheLeft(block); }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -123,10 +136,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public virtual bool IsFullAndOpaqueToTheFront(Block block)
+        protected virtual bool isFullAndOpaqueToTheFront(Block block)
         {
-            return IsVisible(block);
+            return instance.isVisible(block);
         }
+
+        public static bool IsFullAndOpaqueToTheFront(Block block) { return instance.isFullAndOpaqueToTheFront(block); }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -145,10 +160,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public virtual bool IsFullAndOpaqueToTheBack(Block block)
+        protected virtual bool isFullAndOpaqueToTheBack(Block block)
         {
-            return IsVisible(block);
+            return instance.isVisible(block);
         }
+
+        public static bool IsFullAndOpaqueToTheBack(Block block) { return instance.isFullAndOpaqueToTheBack(block); }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -167,10 +184,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public virtual bool IsFullAndOpaqueToTheTop(Block block)
+        protected virtual bool isFullAndOpaqueToTheTop(Block block)
         {
-            return IsVisible(block);
+            return instance.isVisible(block);
         }
+
+        public static bool IsFullAndOpaqueToTheTop(Block block) { return instance.isFullAndOpaqueToTheTop(block); }
 
         /// <summary>
         /// Whether or not this block, when drawn,
@@ -189,10 +208,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public virtual bool IsFullAndOpaqueToTheBottom(Block block)
+        protected virtual bool isFullAndOpaqueToTheBottom(Block block)
         {
-            return IsVisible(block);
+            return instance.isVisible(block);
         }
+
+        public static bool IsFullAndOpaqueToTheBottom(Block block) { return instance.isFullAndOpaqueToTheBottom(block); }
         #endregion
 
         #region Physics Data
@@ -202,7 +223,9 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsPassable(Block block);
+        protected abstract bool isPassable(Block block);
+
+        public static bool IsPassable(Block block) { return instance.isPassable(block); }
 
         /// <summary>
         /// The boundingbox which this square actually blocks
@@ -211,34 +234,48 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public BoundingBox PhysicalBlockingBox(Block block)
+        protected BoundingBox physicalBlockingBox(Block block)
         {
             return new BoundingBox(Vector3.Zero, Vector3.One);
         }
+
+        public static BoundingBox PhysicalBlockingBox(Block block) { return instance.physicalBlockingBox(block); }
 
         /// <summary>
         /// The amount of friction one achieves while moving along this block.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract float Friction(Block block);
+        protected abstract float friction(Block block);
 
-        public abstract Vector3 FrictionVelocity(Block block);
+        public static float Friction(Block block) { return instance.friction(block); }
+
+        protected abstract Vector3 frictionVelocity(Block block);
+
+        public static Vector3 FrictionVelocity(Block block) { return instance.frictionVelocity(block); }
         #endregion
 
         #region Drawing Data
-        public abstract int TotalNumberOfTextures { get; }
+        protected abstract int totalNumberOfTextures { get; }
 
-        public abstract Texture2D Texture(int textureIndex);
+        public static int TotalNumberOfTextures { get { return instance.totalNumberOfTextures; } }
 
-        public abstract int TextureIndex(Block block);
+        protected abstract Texture2D texture(int textureIndex);
+
+        public static Texture2D Texture(int textureIndex) { return instance.texture(textureIndex); }
+
+        protected abstract int textureIndex(Block block);
+
+        public static int TextureIndex(Block block) { return instance.textureIndex(block); }
 
         /// <summary>
         /// Whether or not to draw this block.
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract bool IsVisible(Block block);
+        protected abstract bool isVisible(Block block);
+
+        public static bool IsVisible(Block block) { return instance.isVisible(block); }
 
         /// <summary>
         /// The boundingbox which this square actually blocks
@@ -247,10 +284,12 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public BoundingBox VisualBoundingBox(Block block)
+        protected BoundingBox visualBoundingBox(Block block)
         {
             return new BoundingBox(Vector3.Zero, Vector3.One);
         }
+
+        public static BoundingBox VisualBoundingBox(Block block) { return instance.visualBoundingBox(block); }
 
         /// <summary>
         /// The model for drawing this block.  Not required to
@@ -262,10 +301,20 @@ namespace Voxelist.BlockHandling
         /// </summary>
         /// <param name="block"></param>
         /// <returns></returns>
-        public abstract GeometryPrimitive DrawingPrimitive(Block block,
+        protected abstract GeometryPrimitive drawingPrimitive(Block block,
             bool includeFrontFace, bool includeBackFace,
             bool includeTopFace, bool includeBottomFace,
             bool includeLeftFace, bool includeRightFace);
+
+        public static GeometryPrimitive DrawingPrimitive(Block block,
+            bool includeFrontFace, bool includeBackFace,
+            bool includeTopFace, bool includeBottomFace,
+            bool includeLeftFace, bool includeRightFace)
+        {
+            return instance.drawingPrimitive(block,
+                includeFrontFace, includeBackFace, includeTopFace,
+                includeBottomFace, includeLeftFace, includeRightFace);
+        }
         #endregion
     }
 }

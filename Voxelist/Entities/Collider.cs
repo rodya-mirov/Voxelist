@@ -43,21 +43,21 @@ namespace Voxelist.Entities
         /// <param name="chunkZ"></param>
         /// <param name="blockZ"></param>
         /// <param name="handler"></param>
-        public Collider(Block block, int chunkX, int chunkZ, int blockX, int blockY, int blockZ, BlockHandler handler)
+        public Collider(Block block, int chunkX, int chunkZ, int blockX, int blockY, int blockZ)
         {
             this.collidedObject = block;
 
             this.colliderChunkX = chunkX;
             this.colliderChunkZ = chunkZ;
 
-            this.StartingBoundingBox = handler.PhysicalBlockingBox(block);
+            this.StartingBoundingBox = BlockHandler.PhysicalBlockingBox(block);
             Vector3 translation = new Vector3(blockX, blockY, blockZ);
 
             this.StartingBoundingBox = new BoundingBox(
                 StartingBoundingBox.Min + translation, StartingBoundingBox.Max + translation);
 
-            this.Friction = handler.Friction(block);
-            this.FrictionVelocity = handler.FrictionVelocity(block);
+            this.Friction = BlockHandler.Friction(block);
+            this.FrictionVelocity = BlockHandler.FrictionVelocity(block);
         }
 
         public Collider(Entity other)

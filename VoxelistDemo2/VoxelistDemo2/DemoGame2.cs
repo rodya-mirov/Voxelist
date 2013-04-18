@@ -11,6 +11,8 @@ using Microsoft.Xna.Framework.Media;
 using Voxelist;
 using Voxelist.Utilies;
 using Voxelist.Rendering;
+using Voxelist.Entities;
+using Voxelist.BlockHandling;
 
 namespace VoxelistDemo2
 {
@@ -22,7 +24,7 @@ namespace VoxelistDemo2
         private SpriteBatch batch;
         private SpriteFont Font;
 
-        private WorldManagerExtension drawable;
+        private WorldManagerExtension manager;
 
         public DemoGame2()
         {
@@ -38,16 +40,25 @@ namespace VoxelistDemo2
         /// </summary>
         protected override void Initialize()
         {
-            BlockHandlerExtension handler = new BlockHandlerExtension();
-            EntityBuilderExtension builder = new EntityBuilderExtension();
-            MapExtension map = new MapExtension(handler);
+            MapExtension map = new MapExtension();
+            manager = new WorldManagerExtension(map);
 
-            drawable = new WorldManagerExtension(this, map, handler, builder);
-            Components.Add(drawable);
+            WorldRendererExtension renderer = new WorldRendererExtension(this, manager);
+            Components.Add(renderer);
 
             Components.Add(new FPSComponent(this, "Fonts/Segoe"));
 
             base.Initialize();
+        }
+
+        protected override BlockHandler MakeBlockHandler()
+        {
+            return new BlockHandlerExtension();
+        }
+
+        protected override EntityBuilder MakeEntityBuilder()
+        {
+            return new EntityBuilderExtension();
         }
 
         /// <summary>

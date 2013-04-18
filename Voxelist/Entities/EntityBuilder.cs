@@ -9,14 +9,30 @@ namespace Voxelist.Entities
 {
     public abstract class EntityBuilder
     {
-        public EntityBuilder()
+        internal static EntityBuilder instance;
+
+        protected EntityBuilder()
         {
+            if (instance != null)
+                throw new InvalidProgramException("Can't instantiate two EntityBuilders!");
+
+            instance = this;
         }
 
-        public virtual void LoadContent(Game game)
+        protected Game Game { get; private set; }
+
+        protected virtual void loadContent(Game game)
         {
+            this.Game = game;
         }
 
-        public abstract Entity MakeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager);
+        public static void LoadContent(Game game) { instance.loadContent(game); }
+
+        protected abstract Entity makeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager);
+
+        public static Entity MakeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
+        {
+            return instance.makeEntity(schema, chunkX, chunkZ, manager);
+        }
     }
 }

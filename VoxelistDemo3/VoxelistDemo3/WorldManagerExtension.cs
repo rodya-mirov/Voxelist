@@ -13,12 +13,12 @@ namespace VoxelistDemo3
 {
     public class WorldManagerExtension : WorldManager
     {
-        private MapExtension Map { get; set; }
+        private MapExtension MapExtension { get; set; }
 
-        public WorldManagerExtension(Game game, MapExtension map, BlockHandlerExtension handler, EntityBuilderExtension builder)
-            : base(game, map, handler, builder)
+        public WorldManagerExtension(MapExtension map)
+            : base(map)
         {
-            this.Map = map;
+            this.MapExtension = map;
         }
 
         public PlayerAvatar Avatar { get; private set; }
@@ -30,11 +30,11 @@ namespace VoxelistDemo3
             yield return TestBlock;
         }
 
-        protected override void LoadContent()
+        public override void LoadContent(Game game)
         {
-            base.LoadContent();
+            base.LoadContent(game);
 
-            MouseOverBlock.LoadContent(this.Game);
+            MouseOverBlock.LoadContent(game);
 
             Avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 3, -5), this);
             Camera.StartFollowing(Avatar);

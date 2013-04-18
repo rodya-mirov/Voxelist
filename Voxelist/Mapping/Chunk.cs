@@ -19,7 +19,6 @@ namespace Voxelist.Mapping
     /// <typeparam name="CubeType"></typeparam>
     public class Chunk
     {
-        private BlockHandler BlockHandler { get; set; }
         private Map Map { get; set; }
 
         private Block[, ,] containedCubes;
@@ -28,10 +27,9 @@ namespace Voxelist.Mapping
         public int chunkX { get; private set; }
         public int chunkZ { get; private set; }
 
-        public Chunk(BlockHandler handler, Map map)
+        public Chunk(Map map)
         {
             this.Map = map;
-            this.BlockHandler = handler;
             containedCubes = new Block[GameConstants.CHUNK_X_WIDTH, GameConstants.CHUNK_Y_HEIGHT, GameConstants.CHUNK_Z_LENGTH];
             entitySchemata = new List<EntitySchema>();
         }
@@ -61,10 +59,10 @@ namespace Voxelist.Mapping
             set { containedCubes[x, y, z] = value; }
         }
 
-        public IEnumerable<Entity> MakeGeneratedEntities(EntityBuilder builder, WorldManager manager)
+        public IEnumerable<Entity> MakeGeneratedEntities(WorldManager manager)
         {
             foreach (EntitySchema schema in entitySchemata)
-                yield return builder.MakeEntity(schema, chunkX, chunkZ, manager);
+                yield return EntityBuilder.MakeEntity(schema, chunkX, chunkZ, manager);
         }
 
         #region Drawing assistance

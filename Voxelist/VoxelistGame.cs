@@ -7,12 +7,14 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using Voxelist.Rendering;
 using Voxelist.Utilities;
+using Voxelist.BlockHandling;
+using Voxelist.Entities;
 
 namespace Voxelist
 {
     public abstract class VoxelistGame : Game
     {
-        protected virtual bool useHyperMode { get { return false; } }
+        protected virtual bool useUnboundedFramerate { get { return false; } }
 
         protected virtual bool startInFullScreen { get { return false; } }
         protected bool isFullScreen { get; set; }
@@ -30,9 +32,12 @@ namespace Voxelist
             isFullScreen = false;
         }
 
+        protected abstract BlockHandler MakeBlockHandler();
+        protected abstract EntityBuilder MakeEntityBuilder();
+
         protected override void Initialize()
         {
-            if (useHyperMode)
+            if (useUnboundedFramerate)
             {
                 this.IsFixedTimeStep = false;
                 this.graphics.SynchronizeWithVerticalRetrace = false;
@@ -55,6 +60,9 @@ namespace Voxelist
 
             preferredScreenWidth = GraphicsDevice.Viewport.Width;
             preferredScreenHeight = GraphicsDevice.Viewport.Height;
+
+            MakeBlockHandler();
+            MakeEntityBuilder();
 
             base.Initialize();
         }
@@ -93,6 +101,10 @@ namespace Voxelist
 
         protected override void LoadContent()
         {
+
+            BlockHandler.LoadContent(this);
+            EntityBuilder.LoadContent(this);
+
             base.LoadContent();
 
             if (startInFullScreen)

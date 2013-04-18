@@ -19,6 +19,11 @@ namespace VoxelistDemo3
         public BlockHandlerExtension()
             : base()
         {
+            makePrimitives();
+        }
+
+        private void makePrimitives()
+        {
             //2**6 == 64
             //So we'll need 64 cases to cover all the possible
             //boolean flag combinations for the DrawingPrimitive
@@ -47,9 +52,9 @@ namespace VoxelistDemo3
 
         private GeometryPrimitive[] fullSizeBlocks;
 
-        public override void LoadContent(Game game)
+        protected override void loadContent(Game game)
         {
-            base.LoadContent(game);
+            base.loadContent(game);
 
             textures = new Texture2D[2];
 
@@ -60,17 +65,17 @@ namespace VoxelistDemo3
         #region Drawing Data
         private Texture2D[] textures;
 
-        public override int TotalNumberOfTextures
+        protected override int totalNumberOfTextures
         {
             get { return 2; }
         }
 
-        public override Texture2D Texture(int textureIndex)
+        protected override Texture2D texture(int textureIndex)
         {
             return textures[textureIndex];
         }
 
-        public override int TextureIndex(Block block)
+        protected override int textureIndex(Block block)
         {
             switch (block.blockID)
             {
@@ -85,7 +90,7 @@ namespace VoxelistDemo3
             }
         }
 
-        public override bool IsVisible(Block block)
+        protected override bool isVisible(Block block)
         {
             switch (block.blockID)
             {
@@ -100,7 +105,7 @@ namespace VoxelistDemo3
             }
         }
 
-        public override GeometryPrimitive DrawingPrimitive(Block block,
+        protected override GeometryPrimitive drawingPrimitive(Block block,
             bool includeFrontFace = true, bool includeBackFace = true,
             bool includeTopFace = true, bool includeBottomFace = true,
             bool includeLeftFace = true, bool includeRightFace = true)
@@ -118,7 +123,7 @@ namespace VoxelistDemo3
         #endregion Drawing Data
 
         #region Physics Data
-        public override bool IsPassable(Block block)
+        protected override bool isPassable(Block block)
         {
             switch (block.blockID)
             {
@@ -134,7 +139,7 @@ namespace VoxelistDemo3
             }
         }
 
-        public override float Friction(Block block)
+        protected override float friction(Block block)
         {
             switch (block.blockID)
             {
@@ -149,7 +154,7 @@ namespace VoxelistDemo3
             }
         }
 
-        public override Vector3 FrictionVelocity(Block block)
+        protected override Vector3 frictionVelocity(Block block)
         {
             return Vector3.Zero;
         }

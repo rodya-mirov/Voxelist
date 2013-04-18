@@ -116,6 +116,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="DemoGame2.cs" />
     <Compile Include="WorldManagerExtension.cs" />
+    <Compile Include="WorldRendererExtension.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

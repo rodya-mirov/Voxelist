@@ -15,12 +15,12 @@ namespace VoxelistDemo3
         {
         }
 
-        public override void LoadContent(Game game)
+        protected override void loadContent(Game game)
         {
-            base.LoadContent(game);
+            base.loadContent(game);
         }
 
-        public override Entity MakeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
+        protected override Entity makeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
         {
             throw new NotImplementedException();
         }

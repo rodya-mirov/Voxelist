@@ -12,19 +12,13 @@ using Voxelist.GeometryPrimitives;
 
 namespace Voxelist.Rendering
 {
-    public abstract class WorldManager : DrawableGameComponent
+    public abstract class WorldManager// : DrawableGameComponent
     {
-        private Map Map { get; set; }
-        private BlockHandler BlockHandler { get; set; }
-        private EntityBuilder EntityBuilder { get; set; }
+        public Map Map { get; private set; }
 
-        public WorldManager(Game game, Map map, BlockHandler handler, EntityBuilder entityBuilder)
-            : base(game)
+        public WorldManager(Map map)
         {
             this.Map = map;
-
-            this.BlockHandler = handler;
-            this.EntityBuilder = entityBuilder;
         }
 
         private Queue<Entity> generatedInteractiveEntities = new Queue<Entity>();
@@ -56,37 +50,17 @@ namespace Voxelist.Rendering
             yield break;
         }
 
-        public override void Initialize()
+        public virtual void LoadContent(Game game)
         {
-            base.Initialize();
+            Map.LoadContent(game);
         }
 
-        protected virtual VoxelistEffectWrapper MakeEffectWrapper()
+        public virtual void Initialize()
         {
-            BasicEffect basicEffect = new BasicEffect(GraphicsDevice);
-            basicEffect.TextureEnabled = true;
-            basicEffect.EnableDefaultLighting();
-
-            return new BasicEffectWrapper(basicEffect);
         }
 
-        protected override void LoadContent()
+        public virtual void Update(GameTime gameTime)
         {
-            base.LoadContent();
-
-            drawingEffectWrapper = MakeEffectWrapper();
-
-            BlockHandler.LoadContent(Game);
-            EntityBuilder.LoadContent(Game);
-
-            Map.LoadContent(Game);
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            base.Update(gameTime);
-
-            BlockHandler.Update(gameTime);
             Camera.Update(gameTime);
             Map.Update(gameTime);
             ManageGeneratedEntities(gameTime);
@@ -104,7 +78,7 @@ namespace Voxelist.Rendering
             updateGeneratedEntityQueue(gameTime, ref generatedNonInteractiveEntities);
 
             //add new managed entities
-            foreach (Entity entity in Map.GenerateAllAvailableEntities(EntityBuilder, this))
+            foreach (Entity entity in Map.GenerateAllAvailableEntities(this))
             {
                 int cx = entity.Position.chunkX;
                 int cz = entity.Position.chunkZ;
@@ -140,92 +114,13 @@ namespace Voxelist.Rendering
             HelperMethods.Swap(ref toUpdate, ref backupEntityQueue);
         }
 
-        protected override void Dispose(bool disposing)
+        public virtual void Dispose(bool disposing)
         {
-            base.Dispose(disposing);
-
             Map.Dispose();
         }
 
         public int CenterChunkX { get { return Map.CenterChunkX; } }
         public int CenterChunkZ { get { return Map.CenterChunkZ; } }
-
-        public override void Draw(GameTime gameTime)
-        {
-            base.Draw(gameTime);
-
-            DrawScene(gameTime);
-        }
-
-        protected VoxelistEffectWrapper drawingEffectWrapper;
-
-        private void DrawScene(GameTime gameTime)
-        {
-            drawingEffectWrapper.Projection = Camera.ProjectionMatrix;
-            drawingEffectWrapper.View = Camera.ViewMatrix;
-
-            drawMap();
-            drawEntities();
-        }
-
-        private void drawEntities()
-        {
-            Effect drawingEffect = drawingEffectWrapper.Effect;
-
-            foreach (Entity entity in Entities())
-            {
-                if (!entity.ShouldBeDrawn())
-                    continue;
-
-                drawingEffectWrapper.World = Matrix.CreateTranslation(Camera.objectTranslation(entity.Position) + entity.DrawingOffset);
-                drawingEffectWrapper.Texture = entity.DrawableTexture;
-
-                switch (entity.DrawingType)
-                {
-                    case Entity.DrawType.GeometryPrimitive:
-
-                        GeometryPrimitive primitive = entity.DrawableGeometryPrimitive;
-                        foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
-                        {
-                            pass.Apply();
-
-                            drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
-                                PrimitiveType.TriangleList,
-                                primitive.Vertices, 0, primitive.Vertices.Length,
-                                primitive.Indices, 0, primitive.Indices.Length / 3);
-                        }
-                        break;
-
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-        }
-
-        private void drawMap()
-        {
-            Effect drawingEffect = drawingEffectWrapper.Effect;
-
-            for (int textureIndex = 0; textureIndex < BlockHandler.TotalNumberOfTextures; textureIndex++)
-            {
-                drawingEffectWrapper.Texture = BlockHandler.Texture(textureIndex);
-
-                foreach (Tuple<Vector3, GeometryPrimitive> offsetChunkPrimitive in Map.ChunksToDraw(textureIndex))
-                {
-                    drawingEffectWrapper.World = Matrix.CreateTranslation(offsetChunkPrimitive.Item1);
-                    GeometryPrimitive primitive = offsetChunkPrimitive.Item2;
-
-                    foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-
-                        drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.TriangleList,
-                            primitive.Vertices, 0, primitive.Vertices.Length,
-                            primitive.Indices, 0, primitive.Indices.Length / 3);
-                    }
-                }
-            }
-        }
 
         #region Map Method Forwarding
         /// <summary>

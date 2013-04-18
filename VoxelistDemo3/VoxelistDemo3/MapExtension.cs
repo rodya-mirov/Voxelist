@@ -11,8 +11,8 @@ namespace VoxelistDemo3
 {
     public class MapExtension : Map
     {
-        public MapExtension(BlockHandlerExtension handler)
-            : base(handler, 0, 0)
+        public MapExtension()
+            : base(0, 0)
         {
         }
 

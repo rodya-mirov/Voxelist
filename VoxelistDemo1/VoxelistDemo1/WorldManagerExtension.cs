@@ -13,8 +13,8 @@ namespace VoxelistDemo1
 {
     public class WorldManagerExtension : WorldManager
     {
-        public WorldManagerExtension(Game game, MapExtension map, BlockHandlerExtension handler, EntityBuilderExtension builder)
-            : base(game, map, handler, builder)
+        public WorldManagerExtension(MapExtension map)
+            : base(map)
         {
         }
 
@@ -25,9 +25,9 @@ namespace VoxelistDemo1
             yield return Avatar;
         }
 
-        protected override void LoadContent()
+        public override void LoadContent(Game game)
         {
-            base.LoadContent();
+            base.LoadContent(game);
 
             Avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 3, 0), this);
             Camera.StartFollowing(Avatar);

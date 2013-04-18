@@ -14,11 +14,6 @@ namespace Voxelist.Mapping
     public abstract class Map
     {
         #region Properties and Fields
-        /// <summary>
-        /// The BlockHandler which affects and afflicts all methods
-        /// involved in the creation and upkeep of this Map.
-        /// </summary>
-        private BlockHandler BlockHandler { get; set; }
 
         /// <summary>
         /// The current Center Chunk coordinate (X) of this Map.
@@ -43,14 +38,12 @@ namespace Voxelist.Mapping
         /// <param name="handler"></param>
         /// <param name="startCenterChunkX"></param>
         /// <param name="startCenterChunkZ"></param>
-        public Map(BlockHandler handler, int startCenterChunkX, int startCenterChunkZ)
+        public Map(int startCenterChunkX, int startCenterChunkZ)
         {
-            this.BlockHandler = handler;
-
             this.CenterChunkX = startCenterChunkX;
             this.CenterChunkZ = startCenterChunkZ;
 
-            this.Cache = new ChunkCache(this, handler, CacheRadius);
+            this.Cache = new ChunkCache(this, CacheRadius);
         }
         #endregion
 
@@ -226,13 +219,13 @@ namespace Voxelist.Mapping
         /// entities.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<Entity> GenerateAllAvailableEntities(EntityBuilder builder, WorldManager manager)
+        public IEnumerable<Entity> GenerateAllAvailableEntities(WorldManager manager)
         {
             for (int x = CenterChunkX - EntitySpawnRadius; x <= CenterChunkX + EntitySpawnRadius; x++)
             {
                 for (int z = CenterChunkZ - EntitySpawnRadius; z <= CenterChunkZ + EntitySpawnRadius; z++)
                 {
-                    foreach (Entity e in Cache.GenerateAvailableEntities(x, z, builder, manager))
+                    foreach (Entity e in Cache.GenerateAvailableEntities(x, z, manager))
                         yield return e;
                 }
             }
@@ -304,7 +297,7 @@ namespace Voxelist.Mapping
                         if (BlockHandler.IsPassable(block))
                             continue;
 
-                        yield return new Collider(block, chunkX, chunkZ, x, y, z, BlockHandler);
+                        yield return new Collider(block, chunkX, chunkZ, x, y, z);
                     }
                 }
             }

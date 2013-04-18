@@ -99,6 +99,7 @@
     <Compile Include="Entities\EntitySchema.cs" />
     <Compile Include="Rendering\BasicEffectWrapper.cs" />
     <Compile Include="Rendering\VoxelistEffectWrapper.cs" />
+    <Compile Include="Rendering\WorldRenderer.cs" />
     <Compile Include="Utilities\ChunkCoordinate.cs" />
     <Compile Include="Utilities\HelperMethods.cs" />
     <Compile Include="Utilities\RandomHelper.cs" />
