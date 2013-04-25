@@ -22,6 +22,8 @@ namespace Voxelist.Mapping
 
         private int EntitySpawnRadius { get { return Map.EntitySpawnRadius; } }
 
+        private Chunk tempChunk;
+
         public ChunkCache(Map map, int cacheRadius)
         {
             this.Map = map;
@@ -29,6 +31,8 @@ namespace Voxelist.Mapping
             this.Radius = cacheRadius;
 
             this.savedChunkData = new Dictionary<ChunkCoordinate, CacheData>();
+
+            tempChunk = new Chunk(map);
 
             LoadStartingData();
         }
@@ -566,7 +570,11 @@ namespace Voxelist.Mapping
             if (cacheData.Chunk == null)
                 cacheData.GiveBlankChunk(Map);
 
-            cacheData.Chunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
+            tempChunk.OverwriteChunkDataWith(loadChunkX, loadChunkZ);
+
+            Chunk swap = tempChunk;
+            tempChunk = cacheData.Chunk;
+            cacheData.Chunk = swap;
 
             lock (CacheLock)
             {
@@ -581,7 +589,7 @@ namespace Voxelist.Mapping
         #region CacheData Class
         private class CacheData
         {
-            public Chunk Chunk { get; private set; }
+            public Chunk Chunk { get; set; }
             public bool NeedsToBeLoaded { get; private set; }
 
             public HashSet<Entity> TouchingEntities { get; private set; }

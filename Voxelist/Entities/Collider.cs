@@ -31,7 +31,9 @@ namespace Voxelist.Entities
 
         public int colliderChunkX, colliderChunkZ;
 
+#if DEBUG
         public Object collidedObject;
+#endif
 
         /// <summary>
         /// Construct a new collider object for a block.  Note the specified coordinates are for
@@ -45,7 +47,9 @@ namespace Voxelist.Entities
         /// <param name="handler"></param>
         public Collider(Block block, int chunkX, int chunkZ, int blockX, int blockY, int blockZ)
         {
+#if DEBUG
             this.collidedObject = block;
+#endif
 
             this.colliderChunkX = chunkX;
             this.colliderChunkZ = chunkZ;
@@ -62,7 +66,9 @@ namespace Voxelist.Entities
 
         public Collider(Entity other)
         {
+#if DEBUG
             this.collidedObject = other;
+#endif
 
             this.colliderChunkX = other.Position.chunkX;
             this.colliderChunkZ = other.Position.chunkZ;

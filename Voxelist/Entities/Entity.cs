@@ -287,7 +287,6 @@ namespace Voxelist.Entities
         /// <returns></returns>
         private void MoveAndResolveCollisions(Vector3 intendedChange)
         {
-
             bool StartedOnGround = OnGround;
 
             Vector3 originalIntendedChange = intendedChange;
@@ -446,6 +445,7 @@ namespace Voxelist.Entities
             {
                 BoundingBox blockBounds = collider.GetRelativeBoundingBox(Position.chunkX, Position.chunkZ);
 
+#if DEBUG
                 if (blockBounds.Intersects(unmovedBox))
                 {
                     if (this == collider.collidedObject)
@@ -453,6 +453,7 @@ namespace Voxelist.Entities
 
                     throw new NotImplementedException();
                 }
+#endif
 
                 if (!blockBounds.Intersects(stretchedBox))
                     continue;

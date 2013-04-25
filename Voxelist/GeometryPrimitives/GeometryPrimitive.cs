@@ -159,21 +159,7 @@ namespace Voxelist.GeometryPrimitives
         /// x, y, and z are all lowest, and size should be a strictly positive vector in all
         /// components.
         /// 
-        /// It also associates a texture to it, in UV coordinates, and the texture usage
-        /// looks like this:
-        /// 
-        ///    --------------------
-        ///    | BK | T  | BT |   |
-        ///    --------------------
-        ///    | L  | F  | R  |   |
-        ///    --------------------
-        ///    
-        /// This uses only the specified portion of the texture.  For example, if the relevant
-        /// texture portion is the upper-right quarter, textureMinimalCorner should be (0, .5f),
-        /// and textureSize should be (.5f, .5f).
-        /// 
         /// There are a big pile of optional bools, indicating which (if any) faces to include.
-        /// All default to true.
         /// </summary>
         /// <param name="minimalCorner">Corner where x, y, and z are minimal.</param>
         /// <param name="size">Positive vector expressing the x, y, and z size.</param>

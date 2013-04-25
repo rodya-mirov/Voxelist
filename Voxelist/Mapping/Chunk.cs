@@ -67,7 +67,6 @@ namespace Voxelist.Mapping
 
         #region Drawing assistance
         private GeometryPrimitive[] combinedPrimitives;
-        private int[] combinedVerticesCount, combinedTrianglesCount;
         private bool[] usesTextureIndex;
 
         private BoundingBox visualBoundingBox;
@@ -145,7 +144,6 @@ namespace Voxelist.Mapping
                     }
                 }
 
-
                 GeometryPrimitive[] primitivesArray = new GeometryPrimitive[buildingBlocks.Count];
                 buildingBlocks.CopyTo(primitivesArray);
 
@@ -154,16 +152,12 @@ namespace Voxelist.Mapping
                 if (newUsesTextureIndex[textureIndex])
                 {
                     newCombinedPrimitives[textureIndex] = GeometryPrimitive.Combine(primitivesArray);
-                    newCombinedVerticesCount[textureIndex] = newCombinedPrimitives[textureIndex].Vertices.Length;
-                    newCombinedTrianglesCount[textureIndex] = newCombinedPrimitives[textureIndex].Indices.Length / 3;
                 }
             }
 
             lock (this)
             {
                 combinedPrimitives = newCombinedPrimitives;
-                combinedTrianglesCount = newCombinedTrianglesCount;
-                combinedVerticesCount = newCombinedVerticesCount;
                 usesTextureIndex = newUsesTextureIndex;
 
                 visualBoundingBox = new BoundingBox(
