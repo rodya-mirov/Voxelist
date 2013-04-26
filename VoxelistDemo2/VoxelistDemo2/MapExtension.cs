@@ -23,7 +23,7 @@ namespace VoxelistDemo2
 
         public override int EntitySpawnRadius
         {
-            get { return 6; }
+            get { return 7; }
         }
 
         public override void MakeChunkData(int chunkX, int chunkZ, Block[, ,] arrayToFill, List<EntitySchema> entityDataToFill)
@@ -45,6 +45,9 @@ namespace VoxelistDemo2
 
                         arrayToFill[x, y, z] = block;
                     }
+
+                    if (x == 0 && z == 0)
+                        entityDataToFill.Add(new EntitySchema(0, x, height+5, z));
                 }
             }
         }

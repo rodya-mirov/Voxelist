@@ -371,5 +371,18 @@ namespace Voxelist.GeometryPrimitives
 
             return GeometryPrimitive.Combine(faces);
         }
+
+        public void Draw(Effect effect)
+        {
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+
+                effect.GraphicsDevice.DrawUserIndexedPrimitives(
+                    PrimitiveType.TriangleList,
+                    Vertices, 0, Vertices.Length,
+                    Indices, 0, Indices.Length / 3);
+            }
+        }
     }
 }

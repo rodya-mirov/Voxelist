@@ -683,7 +683,7 @@ namespace Voxelist.Mapping
                 }
                 else
                 {
-                    throw new IndexOutOfRangeException("Specified chunk is not loaded!");
+                    //do nothing :)
                 }
             }
         }

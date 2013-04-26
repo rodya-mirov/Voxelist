@@ -18,11 +18,19 @@ namespace VoxelistDemo2
         protected override void loadContent(Game game)
         {
             base.loadContent(game);
+
+            BillboardSetPiece.LoadContent(game);
         }
 
         protected override Entity makeEntity(EntitySchema schema, int chunkX, int chunkZ, WorldManager manager)
         {
-            throw new NotImplementedException();
+            Entity output = new BillboardSetPiece(
+                new Voxelist.Utilities.WorldPosition(chunkX, chunkZ, schema.inChunkX, schema.inChunkY, schema.inChunkZ),
+                manager);
+
+            output.PutOnGround();
+
+            return output;
         }
     }
 }

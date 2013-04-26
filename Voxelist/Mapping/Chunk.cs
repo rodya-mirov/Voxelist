@@ -247,17 +247,20 @@ namespace Voxelist.Mapping
 
         public bool ShouldDraw(Vector3 drawLocation, int textureIndex)
         {
-            if (!usesTextureIndex[textureIndex])
-                return false;
+            lock (this)
+            {
+                if (!usesTextureIndex[textureIndex])
+                    return false;
 
-            BoundingBox visualBounds = new BoundingBox(
-                   drawLocation + visualBoundingBox.Min,
-                   drawLocation + visualBoundingBox.Max);
+                BoundingBox visualBounds = new BoundingBox(
+                       drawLocation + visualBoundingBox.Min,
+                       drawLocation + visualBoundingBox.Max);
 
-            if (Camera.IsOffScreen(visualBounds))
-                return false;
+                if (Camera.IsOffScreen(visualBounds))
+                    return false;
 
-            return true;
+                return true;
+            }
         }
 
         public GeometryPrimitive DrawablePrimitive(int textureIndex)

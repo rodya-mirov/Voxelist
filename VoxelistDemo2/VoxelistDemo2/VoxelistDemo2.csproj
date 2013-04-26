@@ -107,6 +107,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BillboardSetPiece.cs" />
     <Compile Include="BlockHandlerExtension.cs" />
     <Compile Include="EntityBuilderExtension.cs" />
     <Compile Include="LightingEffectExtension.cs" />

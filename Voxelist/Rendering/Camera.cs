@@ -329,6 +329,17 @@ namespace Voxelist.Rendering
         }
         #endregion View Matrix
 
+        #region Billboarding
+        public static Matrix MakeBillboard(Entity entity)
+        {
+            return Matrix.CreateBillboard(
+                objectTranslation(entity.Position) + entity.DrawingOffset,
+                Position.InChunkPosition,
+                cameraUp,
+                Forward);
+        }
+        #endregion
+
         #region Projection Matrix
 
         private static float nearPlaneDistance = 0.1f;

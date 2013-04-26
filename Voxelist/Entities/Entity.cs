@@ -516,6 +516,14 @@ namespace Voxelist.Entities
         }
         #endregion
 
+        public void PutOnGround()
+        {
+            TimeSpan smallTime = new TimeSpan(0, 0, 0, 0, 17);
+            GameTime faketime = new GameTime(smallTime, smallTime);
+
+            while (!YCollidedDown)
+                physicsUpdate(faketime);
+        }
         #endregion
 
         #region Drawing
@@ -549,9 +557,9 @@ namespace Voxelist.Entities
         public abstract Texture2D DrawableTexture { get; }
 
         public virtual GeometryPrimitive DrawableGeometryPrimitive { get { throw new NotImplementedException(); } }
-        public virtual Model DrawableModel { get { throw new NotImplementedException(); } }
+        public virtual GeometryPrimitive[] BillboardGeometries { get { throw new NotImplementedException(); } }
 
-        public enum DrawType { GeometryPrimitive, Model }
+        public enum DrawType { GeometryPrimitive, Billboards }
         #endregion
     }
 }

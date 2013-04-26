@@ -25,6 +25,8 @@ namespace VoxelistDemo2
             base.Initialize();
 
             avatar = new PlayerAvatar(new WorldPosition(0, 0, 0, 70, 0), this);
+            avatar.PutOnGround();
+
             Camera.StartFollowing(avatar);
         }
 

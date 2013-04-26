@@ -205,7 +205,7 @@ namespace Voxelist.Mapping
         /// <summary>
         /// The range at which generated Entities are spawned (that is, come
         /// into existence, instead of being inert schemas on the Chunks). This
-        /// should be at most the ViewDistance, certainly, but could be less for
+        /// should be at most the ViewDistance-1, but could be less for
         /// performance reasons (depending on the number of Entities you have,
         /// and your ViewDistance).
         /// 

@@ -88,23 +88,25 @@ namespace Voxelist.Rendering
                 if (!entity.ShouldBeDrawn())
                     continue;
 
-                drawingEffectWrapper.World = Matrix.CreateTranslation(Camera.objectTranslation(entity.Position) + entity.DrawingOffset);
                 drawingEffectWrapper.Texture = entity.DrawableTexture;
 
                 switch (entity.DrawingType)
                 {
                     case Entity.DrawType.GeometryPrimitive:
 
-                        GeometryPrimitive primitive = entity.DrawableGeometryPrimitive;
-                        foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
-                        {
-                            pass.Apply();
+                        drawingEffectWrapper.World = Matrix.CreateTranslation(Camera.objectTranslation(entity.Position) + entity.DrawingOffset);
+                        entity.DrawableGeometryPrimitive.Draw(drawingEffectWrapper.Effect);
 
-                            drawingEffect.GraphicsDevice.DrawUserIndexedPrimitives(
-                                PrimitiveType.TriangleList,
-                                primitive.Vertices, 0, primitive.Vertices.Length,
-                                primitive.Indices, 0, primitive.Indices.Length / 3);
-                        }
+                        break;
+
+                    case Entity.DrawType.Billboards:
+
+                        drawingEffectWrapper.World = Camera.MakeBillboard(entity);
+                        GeometryPrimitive[] billboards = entity.BillboardGeometries;
+
+                        for (int i = 0; i < billboards.Length; i++)
+                            billboards[i].Draw(drawingEffectWrapper.Effect);
+
                         break;
 
                     default:
@@ -125,6 +127,9 @@ namespace Voxelist.Rendering
                 {
                     drawingEffectWrapper.World = Matrix.CreateTranslation(offsetChunkPrimitive.Item1);
                     GeometryPrimitive primitive = offsetChunkPrimitive.Item2;
+
+                    if (primitive.Vertices == null || primitive.Indices == null)
+                        continue;
 
                     foreach (EffectPass pass in drawingEffect.CurrentTechnique.Passes)
                     {
